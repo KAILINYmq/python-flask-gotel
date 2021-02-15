@@ -40,3 +40,8 @@ CONCEPT_IDEA_FOLDER = "idea"
 # JWT token expires minites
 JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=12)
 AUDIT_TRAIL = ['auth', 'download']
+
+S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
+S3_SECRET_KEY_ID = os.getenv("S3_SECRET_KEY_ID")
+S3_SECRET_ACCESS_KEY = os.getenv("S3_SECRET_ACCESS_KEY")
+S3_REGION = os.getenv("S3_REGION")

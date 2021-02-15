@@ -82,3 +82,4 @@ python-bidi
 dedupe
 boto3
 blinker
+s3fs
