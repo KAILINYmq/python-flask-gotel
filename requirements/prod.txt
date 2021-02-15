@@ -4,7 +4,7 @@
 flask==1.1.0
 flask-cors
 flask_restplus
-flask-jwt-extended
+flask-jwt-extended==3.25.0
 werkzeug==0.16.1
 click>=5.0
 
@@ -80,3 +80,5 @@ python-bidi
 
 # record deduplication
 dedupe
+boto3
+blinker
