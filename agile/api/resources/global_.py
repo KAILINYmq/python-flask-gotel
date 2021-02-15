@@ -162,3 +162,8 @@ class CategoryList(Resource):
         obj.save()
         db.session.commit()
         return ApiResponse(schema.dump(obj), ResposeStatus.Success)
+
+
+class Ping(Resource):
+    def get(self):
+        return ApiResponse("Pong", ResposeStatus.Success)

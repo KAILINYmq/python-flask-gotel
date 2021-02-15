@@ -1,21 +1,14 @@
 # coding: utf-8
 import os
-import shutil
-from flask import request, send_from_directory, current_app
-from flask_restplus import Resource, fields, marshal_with, reqparse, inputs
-from flask_sqlalchemy import SQLAlchemy
-from flask_jwt_extended import jwt_required
-from agile.commons import dbutil
-from agile.extensions import ma, db, cache
-from sqlalchemy_mixins import SmartQueryMixin, ReprMixin, JOINED, smart_query
+
 from flasgger import swag_from
+from flask import send_from_directory, current_app
+from flask_restplus import Resource, reqparse
+
+from agile.commons import s3file
 from agile.commons.api_doc_helper import get_request_parser_doc_dist
 from agile.commons.api_response import ResposeStatus, ApiResponse
-from agile.commons.pagination import paginate
-from marshmallow import Schema, ValidationError, fields as mfields, INCLUDE, post_load
-from flask_jwt_extended import get_jwt_claims, current_user
-from agile.decorators import permission_required, category_authorization_required
-from agile.commons.s3file import create_presigned_url, del_object, upload_file
+from agile.extensions import cache
 
 
 def get_args(return_parse_args=True):
@@ -44,11 +37,10 @@ class FileList(Resource):
         return send_from_directory(upload_dir, filename)
 
 
-
 class S3Url(Resource):
     @cache.cached(query_string=True)
     def get(self):
         args = get_args()
         object_name = args.object_name
-        object_url = create_presigned_url(object_name)
+        object_url = s3file.DEFAULT_BUCKET.generate_presigned_url(object_name)
         return ApiResponse(object_url, ResposeStatus.Success)
