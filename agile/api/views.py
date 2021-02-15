@@ -2,6 +2,7 @@
 from flask import Blueprint, jsonify
 from flask_restplus import Api
 from agile.api.resources import *
+from agile.api.resources.global_ import Ping
 
 blueprint = Blueprint("api", __name__, url_prefix="/api/v1")
 
@@ -25,3 +26,5 @@ api.add_resource(CategoryList, "/category")
 api.add_resource(AuditLogDetail, "/auditlog")
 api.add_resource(UsageReportList, "/usageReport")
 
+# ping
+api.add_resource(Ping, "/ping")
