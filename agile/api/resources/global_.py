@@ -1,6 +1,8 @@
 from flask import request
 from flask_restplus import Resource, reqparse
 from flask_jwt_extended import jwt_required
+
+from agile.api.resources.audit import get_auditlog_args
 from agile.commons.api_response import ResposeStatus, ApiResponse
 from agile.models import User, Department, Category, Role
 from agile.extensions import ma, db
@@ -166,4 +168,9 @@ class CategoryList(Resource):
 
 class Ping(Resource):
     def get(self):
-        return ApiResponse("Pong", ResposeStatus.Success)
+        name = request.args.get("name")
+        if name is None:
+            name = ""
+        else:
+            name = " " + name
+        return ApiResponse("Pong" + name, ResposeStatus.Success)
