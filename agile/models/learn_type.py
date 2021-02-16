@@ -9,7 +9,7 @@ class Learn_type(db.Model):
     __tablename__ = 'learn_type'
     id = db.Column(db.Integer, primary_key=True)
     # 想法ID
-    idea_id = db.Column(db.Integer, db.ForeignKey('idea.id'))
+    idea_id = db.Column(db.Integer, db.ForeignKey('learn.id'))
     # 类型ID
     type_id = db.Column(db.Integer, db.ForeignKey('type_table.id'))
     # 创建时间

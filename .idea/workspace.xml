@@ -2,8 +2,22 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="73384f6f-1b14-4170-a649-a48b5cfec34a" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/agile/api/resources/idea.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/agile/api/resources/learning.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.env.development" beforeDir="false" afterPath="$PROJECT_DIR$/.env.development" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/agile/api/resources/global_.py" beforeDir="false" afterPath="$PROJECT_DIR$/agile/api/resources/global_.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/agile/api/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/agile/api/views.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/agile/models/activities.py" beforeDir="false" afterPath="$PROJECT_DIR$/agile/models/activities.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/agile/models/idea.py" beforeDir="false" afterPath="$PROJECT_DIR$/agile/models/idea.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/agile/models/learn.py" beforeDir="false" afterPath="$PROJECT_DIR$/agile/models/learn.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/agile/models/learn_lab.py" beforeDir="false" afterPath="$PROJECT_DIR$/agile/models/learn_lab.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/agile/models/learn_name.py" beforeDir="false" afterPath="$PROJECT_DIR$/agile/models/learn_name.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/agile/models/learn_type.py" beforeDir="false" afterPath="$PROJECT_DIR$/agile/models/learn_type.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cache/2029240f6d1128be89ddc32729463129" beforeDir="false" afterPath="$PROJECT_DIR$/cache/tmpcengx0dg.__wz_cache" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/requirements/dev.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements/dev.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/requirements/prod.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements/prod.txt" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -15,23 +29,20 @@
     <splitter split-orientation="horizontal" split-proportion="0.5026738">
       <split-first>
         <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-          <file pinned="false" current-in-tab="false">
+          <file pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/agile/api/views.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="400">
-                  <caret line="19" column="20" selection-start-line="19" selection-start-column="20" selection-end-line="19" selection-end-column="20" />
-                  <folding>
-                    <element signature="e#16#52#0" expanded="true" />
-                  </folding>
+                <state relative-caret-position="-26">
+                  <caret line="39" column="44" selection-start-line="39" selection-start-column="44" selection-end-line="39" selection-end-column="44" />
                 </state>
               </provider>
             </entry>
           </file>
-          <file pinned="false" current-in-tab="true">
+          <file pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/agile/api/resources/activities.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state>
-                  <caret line="66" column="77" lean-forward="true" selection-start-line="66" selection-start-column="77" selection-end-line="66" selection-end-column="77" />
+                <state relative-caret-position="225">
+                  <caret line="66" column="77" selection-start-line="66" selection-start-column="77" selection-end-line="66" selection-end-column="77" />
                   <folding>
                     <element signature="e#0#25#0" expanded="true" />
                   </folding>
@@ -94,11 +105,20 @@
           <file pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/agile/models/activities.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="365">
-                  <caret line="29" column="4" selection-start-line="29" selection-start-column="4" selection-end-line="29" selection-end-column="4" />
+                <state relative-caret-position="360">
+                  <caret line="28" column="40" selection-start-line="28" selection-start-column="40" selection-end-line="28" selection-end-column="40" />
                   <folding>
                     <element signature="e#16#47#0" expanded="true" />
                   </folding>
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file pinned="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/.gitignore">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="383">
+                  <caret line="21" column="8" lean-forward="true" selection-start-line="21" selection-start-column="8" selection-end-line="21" selection-end-column="8" />
                 </state>
               </provider>
             </entry>
@@ -181,19 +201,18 @@
         <option value="$PROJECT_DIR$/.env.development" />
         <option value="$PROJECT_DIR$/agile/models/role.py" />
         <option value="$PROJECT_DIR$/agile/api/resources/__init__.py" />
-        <option value="$PROJECT_DIR$/agile/api/views.py" />
         <option value="$PROJECT_DIR$/agile/commons/api_response.py" />
         <option value="$PROJECT_DIR$/agile/app.py" />
         <option value="$PROJECT_DIR$/agile/api/resources/activities.py" />
+        <option value="$PROJECT_DIR$/agile/api/views.py" />
         <option value="$PROJECT_DIR$/agile/models/activities.py" />
       </list>
     </option>
   </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="25" />
-    <option name="y" value="25" />
+    <option name="x" value="-12" />
     <option name="width" value="1758" />
-    <option name="height" value="986" />
+    <option name="height" value="913" />
   </component>
   <component name="ProjectLevelVcsManager" settingsEditedManually="true">
     <ConfirmationsSetting value="2" id="Add" />
@@ -250,12 +269,12 @@
       <updated>1613314935392</updated>
       <workItem from="1613314947436" duration="2198000" />
       <workItem from="1613354281453" duration="43101000" />
-      <workItem from="1613486821648" duration="228000" />
+      <workItem from="1613486821648" duration="842000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="45527000" />
+    <option name="totallyTimeSpent" value="46141000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -267,10 +286,10 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="25" y="25" width="1758" height="986" extended-state="0" />
+    <frame x="-12" y="0" width="1758" height="913" extended-state="0" />
     <editor active="true" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.11379717" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.11379717" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
@@ -284,7 +303,7 @@
       <window_info anchor="bottom" id="Version Control" order="8" weight="0.32985386" />
       <window_info anchor="bottom" id="Database Changes" order="9" />
       <window_info anchor="bottom" id="Event Log" order="10" side_tool="true" />
-      <window_info active="true" anchor="bottom" id="Terminal" order="11" visible="true" weight="0.3490566" />
+      <window_info anchor="bottom" id="Terminal" order="11" visible="true" weight="0.38193548" />
       <window_info anchor="bottom" id="Python Console" order="12" />
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
@@ -431,13 +450,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/.env.development">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="100">
-          <caret line="4" lean-forward="true" selection-start-line="4" selection-end-line="4" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/../../../../Anaconda3/anzhuang/Lib/site-packages/flask_restplus/resource.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="1450">
@@ -581,16 +593,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/agile/api/views.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="400">
-          <caret line="19" column="20" selection-start-line="19" selection-start-column="20" selection-end-line="19" selection-end-column="20" />
-          <folding>
-            <element signature="e#16#52#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/agile/models/idea_name.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="325">
@@ -651,27 +653,41 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/.env.development">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="100">
+          <caret line="4" lean-forward="true" selection-start-line="4" selection-end-line="4" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/.gitignore">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="450">
-          <caret line="18" lean-forward="true" selection-start-line="18" selection-end-line="18" />
+        <state relative-caret-position="383">
+          <caret line="21" column="8" lean-forward="true" selection-start-line="21" selection-start-column="8" selection-end-line="21" selection-end-column="8" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/agile/api/resources/activities.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state>
-          <caret line="66" column="77" lean-forward="true" selection-start-line="66" selection-start-column="77" selection-end-line="66" selection-end-column="77" />
+        <state relative-caret-position="225">
+          <caret line="66" column="77" selection-start-line="66" selection-start-column="77" selection-end-line="66" selection-end-column="77" />
           <folding>
             <element signature="e#0#25#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/agile/api/views.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-26">
+          <caret line="39" column="44" selection-start-line="39" selection-start-column="44" selection-end-line="39" selection-end-column="44" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/agile/models/activities.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="365">
-          <caret line="29" column="4" selection-start-line="29" selection-start-column="4" selection-end-line="29" selection-end-column="4" />
+        <state relative-caret-position="360">
+          <caret line="28" column="40" selection-start-line="28" selection-start-column="40" selection-end-line="28" selection-end-column="40" />
           <folding>
             <element signature="e#16#47#0" expanded="true" />
           </folding>
