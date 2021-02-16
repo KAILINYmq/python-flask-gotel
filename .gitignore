@@ -19,4 +19,5 @@ bin-release/
 
 .idea/
 .pytest_cache/
+.cache/*
 *.pyc
