@@ -25,4 +25,4 @@ def ApiResponse(obj=None, status=ResposeStatus.Success, msg=None):
         "data": obj,
         "message": msg or status.message,
         "status": status.restful_status
-    }, cls=CustomJSONEncoder), status.status_code)
+    }, cls=CustomJSONEncoder, ensure_ascii=False), status.status_code)

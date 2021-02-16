@@ -28,3 +28,11 @@ api.add_resource(UsageReportList, "/usageReport")
 
 # ping
 api.add_resource(Ping, "/ping")
+
+# activities
+api.add_resource(ActivitiesList, "/activities")
+# 查询单个活动、删除活动
+api.add_resource(SingleActivities, "/activities/<int:activities_id>")
+# activities_name、activities_types
+api.add_resource(ActivitiesName, "/activities_name")
+api.add_resource(ActivitiesTypes, "/activities_types")
