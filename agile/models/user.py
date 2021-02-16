@@ -10,13 +10,23 @@ from .permission import Permission
 
 
 class User(AuditModel):
-    """Basic user model
     """
-    username = db.Column(db.String(80), unique=True, nullable=False)
+    Basic user model
+    """
+    id = db.Column(db.Integer, primary_key=True)
+    number=db.Column(db.Integer)
+    name = db.Column(db.String(32), unique=True, nullable=False)
+    # 创建时间
+    creat_time = db.Column(db.DateTime)
+    # 更新时间
+    update_time = db.Column(db.DateTime)
+    # is_del
+    is_delete = db.Column(db.Integer)
     role_id = reference_col('role')
     department_id = reference_col('department')
     # 该部门和用户的关系, 返回该部门的所有用户
-    department = db.relationship('Department', passive_deletes=True, backref='users', foreign_keys=department_id)
+    #department = db.relationship('Department', passive_deletes=True, backref='users', foreign_keys=department_id)
+    department = db.relationship('Department', backref='users', foreign_keys=department_id)
     email = db.Column(db.String(80), unique=True, nullable=False)
     password_ = db.Column('password', db.String(255), nullable=False)
     active = db.Column(db.Boolean, default=True)
