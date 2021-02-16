@@ -22,10 +22,12 @@ class Activities(db.Model):
     image = db.Column(db.String(64), uselist=True)
     # 视频
     video = db.Column(db.String(64), uselist=True)
+
     # 创意
     idea_name = db.Column(db.String(32), uselist=True)
     # 学习
     learn_name = db.Column(db.String(32), uselist=True)
+
     # 创建时间
     create_time = db.Column(db.DateTime, default=datetime.datetime.now)
     # 修改时间
