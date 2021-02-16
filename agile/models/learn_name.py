@@ -9,7 +9,7 @@ class Learn_name(db.Model):
     __tablename__ = 'learn_name'
     id = db.Column(db.Integer, primary_key=True)
     # 想法ID
-    idea_id = db.Column(db.Integer, db.ForeignKey('idea.id'))
+    idea_id = db.Column(db.Integer, db.ForeignKey('learn.id'))
     # 名称ID
     name_id = db.Column(db.Integer, db.ForeignKey('name_table.id'))
     # 创建时间

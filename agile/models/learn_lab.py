@@ -9,7 +9,7 @@ class Learn_lab(db.Model):
     __tablename__ = 'learn_lab'
     id = db.Column(db.Integer, primary_key=True)
     # 想法ID
-    idea_id = db.Column(db.Integer, db.ForeignKey('idea.id'))
+    idea_id = db.Column(db.Integer, db.ForeignKey('learn.id'))
     # 标签ID
     tag_id = db.Column(db.Integer, db.ForeignKey('tag.id'))
     # 创建时间
