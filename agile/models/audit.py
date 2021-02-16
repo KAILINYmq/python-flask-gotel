@@ -18,7 +18,7 @@ class AuditLog(db.Model, AllFeaturesMixin):
     event = db.Column(db.String(20), index=True)
     category = db.Column(db.String(50))
     message = db.Column(db.String(200))
-    extra = db.Column(JSONstore)
+    # extra = db.Column(JSONstore)
     ip = db.Column(db.String(16))
     ## More direct
     user_id = db.Column(db.Integer, index=True)
