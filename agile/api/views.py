@@ -38,6 +38,7 @@ api.add_resource(SingleActivities, "/activities/<int:activities_id>")
 # activities_name、activities_types
 api.add_resource(ActivitiesName, "/activities_name")
 api.add_resource(ActivitiesTypes, "/activities_types")
+
 # learning
 api.add_resource(AddMyLearn, "/addLearn")
 api.add_resource(GetAllLearn, "/getAll")

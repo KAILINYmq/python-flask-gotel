@@ -34,3 +34,5 @@ class Activities(db.Model):
     update_time = db.Column(db.DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
     # is_del
     is_delete = db.Column(db.Integer, default=0)
+    # 状态
+    status = db.Column(db.Integer, default=0)

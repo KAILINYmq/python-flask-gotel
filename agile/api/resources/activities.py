@@ -11,7 +11,7 @@ from datetime import datetime
 class ActivitiesSchema(ma.ModelSchema):
     class Meta:
         include_fk = False
-        fields = ("id", "active", "active_type", "active_time", "active_object", "description")
+        fields = ("id", "active", "active_type", "active_time", "active_object", "description", "status")
         model = Activities
         sqla_session = db.session
 
@@ -19,7 +19,6 @@ class ActivitiesSchema(ma.ModelSchema):
 class ActivitiesSchemas(ma.ModelSchema):
     class Meta:
         include_fk = False
-        # TODO learn_id.name
         fields = ("id", "active", "description", "image", "video", "learn_name", "idea_name", "active_type", "create_time")
         model = Activities
         sqla_session = db.session
@@ -49,64 +48,37 @@ class ActivitiesList(Resource):
             type = request.args.get('type')
             startTime = request.args.get('startTime')
             endTime = request.args.get('endTime')
-            learnId = request.args.get('learnId')
-            ideaId = request.args.get('ideaId')
+            learn = request.args.get('learn')
+            idea = request.args.get('idea')
+            page = int(request.args.get('page') or 1)
+            size = int(request.args.get('size') or 5)
+            # TODO  模糊查询
+            blurry = request.args.get('blurry')
         except Exception:
             return ApiResponse(status=ResposeStatus.ParamFail, msg="参数错误!")
 
         # 2. 查询参数
         schema = ActivitiesSchemas()
+        filterList = []
+        filterList.append(Activities.is_delete != 1)
         try:
-            if learnId.strip() and ideaId.strip():
-                if startTime.strip() and endTime.strip():
-                    return ApiResponse(
-                        obj=schema.dump(Activities.query.filter(and_(Activities.active == name, Activities.active_type == type,
-                                                                     Activities.learn_id == int(learnId), Activities.idea_id == int(ideaId),
-                                                                     Activities.is_delete != 1,
-                                                                     Activities.create_time >= datetime.strptime(startTime, '%Y-%m-%d  %H:%M:%S'),
-                                                                     Activities.create_time <= datetime.strptime(endTime, '%Y-%m-%d  %H:%M:%S'))), many=True)
-                        , status=ResposeStatus.Success, msg="OK")
-                return ApiResponse(obj=schema.dump(Activities.query.filter(and_(Activities.active == name, Activities.active_type == type,
-                                                                  Activities.learn_id == int(learnId), Activities.idea_id == int(ideaId),
-                                                                  Activities.is_delete != 1,)), many=True)
-                                   , status=ResposeStatus.Success, msg="OK")
-            if learnId.strip():
-                if startTime.strip() and endTime.strip():
-                    return ApiResponse(
-                        obj=schema.dump(Activities.query.filter(and_(Activities.active == name, Activities.active_type == type,
-                                                                     Activities.learn_id == int(learnId), Activities.is_delete != 1,
-                                                                     Activities.create_time >= datetime.strptime(startTime, '%Y-%m-%d  %H:%M:%S'),
-                                                                     Activities.create_time <= datetime.strptime(endTime, '%Y-%m-%d  %H:%M:%S'))), many=True)
-                        , status=ResposeStatus.Success, msg="OK")
-                return ApiResponse(obj=schema.dump(Activities.query.filter(and_(Activities.active == name, Activities.active_type == type,
-                                                                 Activities.learn_id == int(learnId),
-                                                                 Activities.is_delete != 1, )), many=True)
-                    , status=ResposeStatus.Success, msg="OK")
-            if ideaId.strip():
-                if startTime.strip() and endTime.strip():
-                    return ApiResponse(
-                        obj=schema.dump(Activities.query.filter(and_(Activities.active == name, Activities.active_type == type,
-                                                                     Activities.idea_id == int(ideaId), Activities.is_delete != 1,
-                                                                     Activities.create_time >= datetime.strptime(startTime, '%Y-%m-%d  %H:%M:%S'),
-                                                                     Activities.create_time <= datetime.strptime(endTime, '%Y-%m-%d  %H:%M:%S'))), many=True)
-                        , status=ResposeStatus.Success, msg="OK")
-                return ApiResponse(obj=schema.dump(Activities.query.filter(and_(Activities.active == name, Activities.active_type == type,
-                                                                 Activities.idea_id == int(ideaId),
-                                                                 Activities.is_delete != 1, )), many=True)
-                    , status=ResposeStatus.Success, msg="OK")
-            if startTime.strip() and endTime.strip():
-                return ApiResponse(
-                    obj=schema.dump(
-                        Activities.query.filter(and_(Activities.active == name, Activities.active_type == type, Activities.is_delete != 1,
-                                                     Activities.create_time >= datetime.strptime(startTime,
-                                                                                                 '%Y-%m-%d  %H:%M:%S'),
-                                                     Activities.create_time <= datetime.strptime(endTime,
-                                                                                                 '%Y-%m-%d  %H:%M:%S'))),
-                        many=True)
-                    , status=ResposeStatus.Success, msg="OK")
-        except Exception as e:
-            object = Activities.query.all()
-            return ApiResponse(obj=schema.dump(object, many=True), status=ResposeStatus.Success, msg="OK")
+            if name is not None:
+                filterList.append(Activities.active == name)
+            if type is not None:
+                filterList.append(Activities.active_type == type)
+            if startTime and endTime is not None:
+                filterList.append(Activities.create_time >= datetime.strptime(startTime, '%Y-%m-%d  %H:%M:%S'))
+                filterList.append(Activities.create_time <= datetime.strptime(endTime, '%Y-%m-%d  %H:%M:%S'))
+            if learn is not None:
+                filterList.append(Activities.idea_name.like('%'+learn+'%'))
+            if idea is not None:
+                filterList.append(Activities.learn_name.like('%'+idea+'%'))
+        except Exception:
+            return ApiResponse(status=ResposeStatus.ParamFail, msg="参数错误!")
+        object = Activities.query.filter(and_(*filterList)).offset((page-1) * size).limit(size)
+
+        # 3.返回数据
+        return ApiResponse(obj=schema.dump(object, many=True), status=ResposeStatus.Success, msg="OK")
 
     def post(self):
         # 新增活动
