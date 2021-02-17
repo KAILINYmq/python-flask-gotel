@@ -4,6 +4,7 @@ from agile.commons.api_response import ResposeStatus, ApiResponse
 from agile.models import Activities, Type_table, Name_table
 from agile.extensions import ma, db
 from sqlalchemy import and_
+from sqlalchemy import or_
 import json
 from datetime import datetime
 
@@ -52,7 +53,6 @@ class ActivitiesList(Resource):
             idea = request.args.get('idea')
             page = int(request.args.get('page') or 1)
             size = int(request.args.get('size') or 5)
-            # TODO  模糊查询
             blurry = request.args.get('blurry')
         except Exception:
             return ApiResponse(status=ResposeStatus.ParamFail, msg="参数错误!")
@@ -62,23 +62,32 @@ class ActivitiesList(Resource):
         filterList = []
         filterList.append(Activities.is_delete != 1)
         try:
-            if name is not None:
-                filterList.append(Activities.active == name)
-            if type is not None:
-                filterList.append(Activities.active_type == type)
-            if startTime and endTime is not None:
-                filterList.append(Activities.create_time >= datetime.strptime(startTime, '%Y-%m-%d  %H:%M:%S'))
-                filterList.append(Activities.create_time <= datetime.strptime(endTime, '%Y-%m-%d  %H:%M:%S'))
-            if learn is not None:
-                filterList.append(Activities.idea_name.like('%'+learn+'%'))
-            if idea is not None:
-                filterList.append(Activities.learn_name.like('%'+idea+'%'))
+            if blurry is not None:
+                object = Activities.query.filter(or_(Activities.active.like('%' + blurry + '%'),
+                                                     Activities.active_type.like('%' + blurry + '%'),
+                                                     Activities.description.like('%' + blurry + '%'),
+                                                     Activities.idea_name.like('%' + blurry + '%'),
+                                                     Activities.learn_name.like('%' + blurry + '%')
+                                                     )).offset((page - 1) * size).limit(size)
+                # 3.返回数据
+                return ApiResponse(obj=schema.dump(object, many=True), status=ResposeStatus.Success, msg="OK")
+            else:
+                if name is not None:
+                    filterList.append(Activities.active == name)
+                if type is not None:
+                    filterList.append(Activities.active_type == type)
+                if startTime and endTime is not None:
+                    filterList.append(Activities.create_time >= datetime.strptime(startTime, '%Y-%m-%d  %H:%M:%S'))
+                    filterList.append(Activities.create_time <= datetime.strptime(endTime, '%Y-%m-%d  %H:%M:%S'))
+                if learn is not None:
+                    filterList.append(Activities.idea_name.like('%'+learn+'%'))
+                if idea is not None:
+                    filterList.append(Activities.learn_name.like('%'+idea+'%'))
+                object = Activities.query.filter(and_(*filterList)).offset((page-1) * size).limit(size)
+                return ApiResponse(obj=schema.dump(object, many=True), status=ResposeStatus.Success, msg="OK")
         except Exception:
             return ApiResponse(status=ResposeStatus.ParamFail, msg="参数错误!")
-        object = Activities.query.filter(and_(*filterList)).offset((page-1) * size).limit(size)
 
-        # 3.返回数据
-        return ApiResponse(obj=schema.dump(object, many=True), status=ResposeStatus.Success, msg="OK")
 
     def post(self):
         # 新增活动
