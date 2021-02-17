@@ -2,7 +2,7 @@ from .user import UserResource, UserList, MyProfileResource
 from .file import FileList, S3Url
 from .global_ import DepartmentList, DepartmentDetail, CategoryList, RoleList
 from .audit import AuditLogDetail, UsageReportList
-
+from .activities import ActivitiesList, SingleActivities, ActivitiesName, ActivitiesTypes
 
 __all__ = [
     # user
@@ -20,4 +20,9 @@ __all__ = [
     # file
     "FileList",
     "S3Url",
+    # activities
+    "ActivitiesList",
+    "SingleActivities",
+    "ActivitiesName",
+    "ActivitiesTypes",
 ]
