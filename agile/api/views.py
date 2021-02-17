@@ -5,6 +5,7 @@ from agile.api.resources import *
 from agile.api.resources.global_ import Ping
 from agile.api.resources.learning import AddMyLearn,GetAllLearn,SortSearch,UpdataLearn
 from agile.api.resources.idea import AddMyIdea,GetAllIdea,SortSearchIdea,UpdataIdea
+from agile.api.resources.tag import ShowFeedback
 
 blueprint = Blueprint("api", __name__, url_prefix="/api/v1")
 
@@ -50,3 +51,11 @@ api.add_resource(AddMyIdea, "/addIdea")
 api.add_resource(GetAllIdea, "/getAllIdea")
 api.add_resource(SortSearchIdea, "/searchIdea")
 api.add_resource(UpdataIdea, "/updataIdea")
+
+# Tag
+api.add_resource(ActivityName, "/aName/getAll")
+api.add_resource(ActivityType, "/aType/getAll")
+api.add_resource(TagList, "/tag/getAll")
+api.add_resource(AllList, "/settings")
+api.add_resource( AddTag, "/addTag" )
+api.add_resource(ShowFeedback, "/showFeedback")

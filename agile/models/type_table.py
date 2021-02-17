@@ -1,6 +1,6 @@
 # coding: utf-8
 from agile.extensions import db
-from agile.database import BaseModel
+
 
 class Type_table(db.Model):
     """
@@ -18,3 +18,5 @@ class Type_table(db.Model):
     creat_time = db.Column(db.DateTime)
     # 更新时间
     update_time = db.Column(db.DateTime)
+    # 名称id
+    name_id = db.column(db.Integer)

@@ -21,5 +21,6 @@ bin-release/
 .pytest_cache/
 .cache/*
 *.pyc
-
+/.idea/
+*/__pycache__
 __pycache__/
