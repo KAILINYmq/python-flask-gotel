@@ -1,4 +1,4 @@
-from flask import request
+from flask import request, abort
 from flask_restplus import Resource, reqparse
 from flask_jwt_extended import jwt_required
 from agile.commons.api_response import ResposeStatus, ApiResponse
@@ -66,7 +66,8 @@ class UserSchema(ma.ModelSchema):
         return p
 
     class Meta:
-        exclude = ("approved_workflows", "finalized_workflows", "password_")
+        # exclude = ("approved_workflows", "finalized_workflows", "password_")
+        exclude = ("password_", "is_delete")
         datetimeformat = "%Y-%m-%d"
         model = User
         sqla_session = db.session
@@ -86,7 +87,8 @@ class MeSchema(ma.ModelSchema):
     )
 
     class Meta:
-        exclude = ("approved_workflows", "finalized_workflows", "password_")
+        # exclude = ("approved_workflows", "finalized_workflows", "password_")
+        exclude = ("password_", "is_delete")
         datetimeformat = "%Y-%m-%d"
         model = User
         sqla_session = db.session
@@ -108,9 +110,9 @@ class UserResource(Resource):
     )
     def get(self, user_id):
         schema = UserSchema()
-        user = User.with_joined("department", "department.categories").get_or_404(
-            user_id
-        )
+        user = User.query.filter(User.is_delete == 0 and User.id == user_id).first()
+        if user is None:
+            abort(404)
         return ApiResponse(schema.dump(user), ResposeStatus.Success)
 
     @swag_from(
@@ -131,7 +133,9 @@ class UserResource(Resource):
     @swag_from(get_request_parser_doc_dist("delete a user", ["User"]))
     def delete(self, user_id):
         user = User.query.get_or_404(user_id)
-        db.session.delete(user)
+        user.is_delete = 1
+        user.save()
+        # db.session.delete(user)
         db.session.commit()
 
         return ApiResponse(None, ResposeStatus.Success)
@@ -154,11 +158,11 @@ class MyProfileResource(Resource):
             ["User"],
             None,
             "return user profile and authorizations",
-            MeSchema,
+            UserSchema,
         )
     )
     def get(self):
-        schema = MeSchema()
+        schema = UserSchema()
         return ApiResponse(schema.dump(current_user), ResposeStatus.Success)
 
 
@@ -212,6 +216,8 @@ class UserList(Resource):
         if user.is_adal is None:
             user.is_adal = user.email.lower().endswith('@unilever.com')
         db.session.add(user)
+        # TODO
+        print(user.role_id)
         db.session.commit()
 
         return ApiResponse(schema.dump(user), ResposeStatus.Success)
