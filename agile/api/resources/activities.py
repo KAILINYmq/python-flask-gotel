@@ -12,7 +12,7 @@ from datetime import datetime
 class ActivitiesSchema(ma.ModelSchema):
     class Meta:
         include_fk = False
-        fields = ("id", "active", "active_type", "active_time", "active_object", "description", "status")
+        fields = ("id", "active", "active_type", "active_time", "active_object", "idea_name", "learn_name", "description", "image", "video", "status")
         model = Activities
         sqla_session = db.session
 
