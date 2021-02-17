@@ -19,4 +19,4 @@ class Type_table(db.Model):
     # 更新时间
     update_time = db.Column(db.DateTime)
     # 名称id
-    name_id = db.column(db.Integer,db.ForeignKey('name_table.id'))
+    name_id = db.column(db.Integer)
