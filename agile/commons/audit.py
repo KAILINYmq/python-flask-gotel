@@ -35,7 +35,7 @@ class AuditTrail:
                        ts=datetime.now(),
                        event=event,
                        message=message,
-                       user_id=user.id,
+                       user_id=user.id if user else -1,
                        ip=request.remote_addr,
                        extra=extra)
         db.session.add(obj)
