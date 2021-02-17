@@ -217,6 +217,7 @@ class UserList(Resource):
             user.is_adal = user.email.lower().endswith('@unilever.com')
         db.session.add(user)
         # TODO
+        print(user.role_id)
         db.session.commit()
 
         return ApiResponse(schema.dump(user), ResposeStatus.Success)

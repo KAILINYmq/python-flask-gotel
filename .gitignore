@@ -21,3 +21,5 @@ bin-release/
 .pytest_cache/
 .cache/*
 *.pyc
+
+__pycache__/
