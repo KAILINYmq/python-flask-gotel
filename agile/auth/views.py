@@ -128,7 +128,7 @@ def login():
     add_token_to_database(access_token, app.config["JWT_IDENTITY_CLAIM"])
     add_token_to_database(refresh_token, app.config["JWT_IDENTITY_CLAIM"])
     auth_audit_trail.send(app._get_current_object(), event='jwt-auth-login', message='user login using JWT Auth',
-                          result='ok', user=user, request=request)
+                          result='ok', user=user, request=request, extra='extra')
     ret = {"access_token": access_token, "refresh_token": refresh_token, "username": user.username, "email": user.email}
     return jsonify(ret), 200
 

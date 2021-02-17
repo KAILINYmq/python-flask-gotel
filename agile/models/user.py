@@ -15,7 +15,7 @@ class User(AuditModel):
     """
     id = db.Column(db.Integer, primary_key=True)
     number=db.Column(db.Integer)
-    name = db.Column(db.String(32), unique=True, nullable=False)
+    username = db.Column(db.String(32), unique=True, nullable=False)
     # 创建时间
     creat_time = db.Column(db.DateTime)
     # 更新时间
