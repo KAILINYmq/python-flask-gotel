@@ -3,6 +3,7 @@ from .file import FileList, S3Url
 from .global_ import DepartmentList, DepartmentDetail, CategoryList, RoleList
 from .audit import AuditLogDetail, UsageReportList
 from .tag import TagList, ActivityName, ActivityType, AllList, AddTag, ShowFeedback
+from .activities import ActivitiesList, SingleActivities, ActivitiesName, ActivitiesTypes
 
 __all__ = [
     # user
@@ -26,5 +27,10 @@ __all__ = [
     "ActivityType",
     "AllList",
     "AddTag",
-    "ShowFeedback"
+    "ShowFeedback",
+    # activities
+    "ActivitiesList",
+    "SingleActivities",
+    "ActivitiesName",
+    "ActivitiesTypes",
 ]

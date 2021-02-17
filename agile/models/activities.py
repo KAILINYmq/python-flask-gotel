@@ -1,6 +1,6 @@
 # coding: utf-8
 from agile.extensions import db
-from agile.database import BaseModel
+import datetime
 
 class Activities(db.Model):
     """
@@ -22,13 +22,17 @@ class Activities(db.Model):
     image = db.Column(db.String(164))
     # 视频
     video = db.Column(db.String(164))
-    # 创意id
-    idea_id = db.Column(db.Integer, db.ForeignKey('idea.id'))
-    # 学习id
-    learn_id = db.Column(db.Integer, db.ForeignKey('learn.id'))
+
+    # 创意
+    idea_name = db.Column(db.String(164))
+    # 学习
+    learn_name = db.Column(db.String(164))
+
     # 创建时间
-    create_time = db.Column(db.DateTime)
+    create_time = db.Column(db.DateTime, default=datetime.datetime.now)
     # 修改时间
-    update_time = db.Column(db.DateTime)
+    update_time = db.Column(db.DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
     # is_del
-    is_delete = db.Column(db.Integer)
+    is_delete = db.Column(db.Integer, default=0)
+    # 状态
+    status = db.Column(db.Integer, default=0)
