@@ -6,6 +6,7 @@ from agile.commons.api_response import ApiResponse, ResposeStatus
 from agile.models import Name_table, Type_table, Tag, Guestbook
 from agile.extensions import db
 from datetime import date, datetime
+import time
 
 
 class TagList(Resource):
@@ -18,6 +19,7 @@ class TagList(Resource):
         except RuntimeError:
             return ApiResponse("Search failed! Please try again.", ResposeStatus.Fail)
 
+
 class ActivityName(Resource):
     """Get all ActivityName"""
 
@@ -28,6 +30,7 @@ class ActivityName(Resource):
         except RuntimeError:
             return ApiResponse("Search failed! Please try again.", ResposeStatus.Fail)
 
+
 class ActivityType(Resource):
     """Get all ActivityType"""
 
@@ -37,6 +40,7 @@ class ActivityType(Resource):
             return ApiResponse([name.name for name in allName], ResposeStatus.Success)
         except RuntimeError:
             return ApiResponse("Search failed! Please try again.", ResposeStatus.Fail)
+
 
 class AllList(Resource):
     """Get all ActivityType"""
@@ -57,38 +61,39 @@ class AllList(Resource):
         except RuntimeError:
             return ApiResponse("Search failed! Please try again.", ResposeStatus.Fail)
 
+
 class AddTag(Resource):
     """
     添加元素
     tagType:Activity Name,Activity Type,Learnings,Idea,Brand,Category
-    type: 当选择Activity name的时候，要选择一个类型的名字
+    name: 当选择Activity name的时候，要选择一个类型的名字
     description:标签值
     """
 
     def post(self):
         try:
+            localtime = time.strftime("%Y-%m-%d", time.localtime())
             data = json.loads(request.get_data(as_text=True))
             if data["tagType"] == "Activity Name":
                 typeTab = Type_table()
                 typeTab.name = data["description"]
                 typeTab.name_type = "Activity Type"
-                name = db.session.query(Name_table).filter_by(name=data["type"]).first_or_404()
+                name = db.session.query(Name_table).filter_by(name=data["name"]).first_or_404()
                 nameId = name.id
-                typeTab.name_id = int(nameId)  # TODO 这里的name_id存不进数据库，等待勐奇学长提pr合并，我再拉一下代码，作迁移，再试试
+                typeTab.name_id = int(nameId)
+                typeTab.creat_time = localtime
                 db.session.add(typeTab)
                 db.session.commit()
-
             elif data["tagType"] == "Activity Type":
                 typeTab = Type_table()
                 typeTab.name = data["description"]
                 typeTab.name_type = "Activity Type"
+                typeTab.creat_time = localtime
                 db.session.add(typeTab)
                 db.session.commit()
-
             else:
                 tagTab = Tag()
                 tagTab.label = data["description"]
-
                 if data["tagType"] == "Learnings":
                     tagTab.label_type = "Learnings"
                 elif data["tagType"] == "Brand":
@@ -97,32 +102,37 @@ class AddTag(Resource):
                     tagTab.label_type = "Idea"
                 elif data["tagType"] == "Category":
                     tagTab.label_type = "Category"
+                tagTab.creat_time = localtime
                 db.session.add(tagTab)
                 db.session.commit()
             return ApiResponse("Already insert tag", ResposeStatus.Success)
         except RuntimeError:
             return ApiResponse("Insert failed! Please try again.", ResposeStatus.Fail)
 
+
 class ShowFeedback(Resource):
     """
     status: 0: get all， 1: get 通过， 2: get 未通过， 3: get 未审批
-    startTime:2021-2-21
-    endTime:2021-3-21
+    startTime:Year-month-day
+    endTime:Year-month-day
     """
 
     def get(self):
         try:
             status = request.args.get("status")
-            time = timeConvert(request.args.get("startTime"),request.args.get("endTime"))
+            time = timeConvert(request.args.get("startTime"), request.args.get("endTime"))
             result = []
             if status == "0":
-                data = db.session.query(Guestbook).filter(Guestbook.time.between(time[0],time[1])).all()
+                data = db.session.query(Guestbook).filter(Guestbook.time.between(time[0], time[1])).all()
             elif status == "1":
-                data = db.session.query(Guestbook).filter_by(state="passed").filter(Guestbook.time.between(time[0],time[1])).all()
+                data = db.session.query(Guestbook).filter_by(state="passed").filter(
+                    Guestbook.time.between(time[0], time[1])).all()
             elif status == "2":
-                data = db.session.query(Guestbook).filter_by(state="rejected").filter(Guestbook.time.between(time[0],time[1])).all()
+                data = db.session.query(Guestbook).filter_by(state="rejected").filter(
+                    Guestbook.time.between(time[0], time[1])).all()
             elif status == "3":
-                data = db.session.query(Guestbook).filter_by(state="not reviewed").filter(Guestbook.time.between(time[0],time[1])).all()
+                data = db.session.query(Guestbook).filter_by(state="not reviewed").filter(
+                    Guestbook.time.between(time[0], time[1])).all()
             for i in data:
                 temp = {}
                 temp["id"] = i.id
@@ -153,7 +163,8 @@ class ShowFeedback(Resource):
         except RuntimeError:
             return ApiResponse("Search failed! Please try again.", ResposeStatus.Fail)
 
-def timeConvert(startTime,endTime):
+
+def timeConvert(startTime, endTime):
     """转换时间"""
     startTime = startTime.split("-")
     endTime = endTime.split("-")
