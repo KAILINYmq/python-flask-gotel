@@ -45,12 +45,13 @@ api.add_resource(AddMyLearn, "/addLearn")
 api.add_resource(GetAllLearn, "/getAll")
 api.add_resource(SortSearch, "/search")
 api.add_resource(UpdataLearn, "/updata")
-
+api.add_resource(Praises,"/praise")
 # idea
 api.add_resource(AddMyIdea, "/addIdea")
 api.add_resource(GetAllIdea, "/getAllIdea")
 api.add_resource(SortSearchIdea, "/searchIdea")
 api.add_resource(UpdataIdea, "/updataIdea")
+api.add_resource(PraisesIdea,"/praiseIdea")
 
 # Tag
 api.add_resource(TagList, "/tag/list")

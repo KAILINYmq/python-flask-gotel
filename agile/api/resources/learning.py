@@ -2,9 +2,11 @@ from flask_restplus import Resource, reqparse
 from agile.commons.api_response import ResposeStatus, ApiResponse
 from flask import request
 from agile.extensions import db
+from flask_jwt_extended import current_user
+from flask_jwt_extended import jwt_required
 import json
 import time
-from agile.models import Learn,Learn_lab, Learn_name,Learn_type
+from agile.models import Learn,Learn_lab, Learn_name,Learn_type,Tag,Praise
 
 # 新增学习
 class AddMyLearn(Resource):
@@ -49,6 +51,23 @@ class GetAllLearn(Resource):
             dict["id"]=value.id
             dict["name"]=value.name
             dict["description"]=value.description
+            labId = session.query(Learn_lab).filter(Learn_lab.idea_id == value.id).all()
+            tagName = []
+            brandName = []
+            categoryName = []
+            for id in labId:
+                # print(id,"=================")
+                labIds = session.query(Tag).filter(Tag.id == id.tag_id).all()
+                for lab in labIds:
+                    if lab.label_type == "Brand":
+                        brandName.append(lab.label)
+                    elif lab.label_type == "Category":
+                        categoryName.append(lab.label)
+                    else:
+                        tagName.append(lab.label)
+            # dict["tag"] = tagName
+            dict["barnd"] = brandName
+            dict["category"] = categoryName
             data.append(dict)
         return ApiResponse(data, ResposeStatus.Success)
 
@@ -104,6 +123,24 @@ class SortSearch(Resource):
             dict["id"]=val.id
             dict["name"]=val.name
             dict["description"]=val.description
+            labId = session.query(Learn_lab).filter(Learn_lab.idea_id == val.id).all()
+            tagName = []
+            brandName = []
+            categoryName = []
+            for id in labId:
+                # print(id,"=================")
+                labIds = session.query(Tag).filter(Tag.id == id.tag_id).all()
+                for lab in labIds:
+                    print(lab, "=================")
+                    if lab.label_type == "Brand":
+                        brandName.append(lab.label)
+                    elif lab.label_type == "Category":
+                        categoryName.append(lab.label)
+                    else:
+                        tagName.append(lab.label)
+            # dict["tag"] = tagName
+            dict["barnd"] = brandName
+            dict["category"] = categoryName
             data.append(dict)
         print(data)
         return ApiResponse(data, ResposeStatus.Success)
@@ -140,6 +177,33 @@ class UpdataLearn(Resource):
 
         session.commit()
         return ApiResponse(data, ResposeStatus.Success)
+
+# 点赞
+class Praises(Resource):
+    method_decorators = [jwt_required]
+    def post(self):
+        #作品id
+        data = json.loads(request.get_data(as_text=True))
+        session = db.session
+        #点赞人id
+        id = current_user.id
+        # id=1
+
+        #learn
+        learn = session.query(Praise).filter(Praise.user_id == id, Praise.work_id == data["id"] ,Praise.type == "learning").first()
+        if learn is None:
+            now = time.strftime('%Y-%m-%d', time.localtime(time.time()))
+            new_parise = Praise(user_id=id, type="learning", work_id=data["id"], is_give=1,time=now)
+            session.add(new_parise)
+            session.commit()
+        else:
+            print(type(learn.is_give))
+            if learn.is_give == 1:
+                learn.is_give = 0
+            else:
+                learn.is_give = 1
+            session.commit()
+        return ApiResponse("sucess", ResposeStatus.Success)
 
 
 def intersect(nums1, nums2):
