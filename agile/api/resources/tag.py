@@ -3,55 +3,52 @@ from flask_restplus import Resource
 from sqlalchemy import and_, between
 
 from agile.commons.api_response import ApiResponse, ResposeStatus
-from agile.models import Name_table, Type_table, Tag, Guestbook
+from agile.models import Tag, Guestbook, Type_table,Details_table
 from agile.extensions import db
 from datetime import date, datetime
 import time
 
 
 class TagList(Resource):
-    """Get all tag list"""
+    """Get the type list"""
 
     def get(self):
         try:
-            allName = db.session.query(Tag).all()
-            return ApiResponse([name.label for name in allName], ResposeStatus.Success)
+            type = request.args.get("type")
+            if type == "ActivityType":
+                allName = db.session.query(Type_table).all()
+                return ApiResponse([name.name for name in allName], ResposeStatus.Success)
+            elif type == "ActivityDetails":
+                allName = db.session.query(Details_table).all()
+                return ApiResponse([name.name for name in allName], ResposeStatus.Success)
+            elif type == "LearningsTags":
+                allName = db.session.query(Tag).filter_by(label_type=type).all()
+                return ApiResponse([name.label for name in allName], ResposeStatus.Success)
+            elif type == "IdeaTags":
+                allName = db.session.query(Tag).filter_by(label_type=type).all()
+                return ApiResponse([name.label for name in allName], ResposeStatus.Success)
+            elif type == "Brand":
+                allName = db.session.query(Tag).filter_by(label_type=type).all()
+                return ApiResponse([name.label for name in allName], ResposeStatus.Success)
+            elif type == "Category":
+                allName = db.session.query(Tag).filter_by(label_type=type).all()
+                return ApiResponse([name.label for name in allName], ResposeStatus.Success)
+
+
         except RuntimeError:
             return ApiResponse("Search failed! Please try again.", ResposeStatus.Fail)
 
 
-class ActivityName(Resource):
-    """Get all ActivityName"""
-
-    def get(self):
-        try:
-            allName = db.session.query(Name_table).all()
-            return ApiResponse([name.name for name in allName], ResposeStatus.Success)
-        except RuntimeError:
-            return ApiResponse("Search failed! Please try again.", ResposeStatus.Fail)
-
-
-class ActivityType(Resource):
-    """Get all ActivityType"""
-
-    def get(self):
-        try:
-            allName = db.session.query(Type_table).all()
-            return ApiResponse([name.name for name in allName], ResposeStatus.Success)
-        except RuntimeError:
-            return ApiResponse("Search failed! Please try again.", ResposeStatus.Fail)
-
-
-class AllList(Resource):
+class AllTagList(Resource):
     """Get all ActivityType"""
 
     def get(self):
         try:
             result = {}
-            allName = db.session.query(Name_table).all()
-            result["ActivityName"] = [name.name for name in allName]
-
             allName = db.session.query(Type_table).all()
+            result["ActivityType"] = [name.name for name in allName]
+
+            allName = db.session.query(Details_table).all()
             result["ActivityType"] = [name.name for name in allName]
 
             allName = db.session.query(Tag).all()
@@ -62,7 +59,7 @@ class AllList(Resource):
             return ApiResponse("Search failed! Please try again.", ResposeStatus.Fail)
 
 
-class AddTag(Resource):
+class InsertTag(Resource):
     """
     添加元素
     tagType:Activity Name,Activity Type,Learnings,Idea,Brand,Category
@@ -78,7 +75,7 @@ class AddTag(Resource):
                 typeTab = Type_table()
                 typeTab.name = data["description"]
                 typeTab.name_type = "Activity Type"
-                name = db.session.query(Name_table).filter_by(name=data["name"]).first_or_404()
+                name = db.session.query(Details_table).filter_by(name=data["name"]).first_or_404()
                 nameId = name.id
                 typeTab.name_id = int(nameId)
                 typeTab.creat_time = localtime
@@ -110,7 +107,7 @@ class AddTag(Resource):
             return ApiResponse("Insert failed! Please try again.", ResposeStatus.Fail)
 
 
-class ShowFeedback(Resource):
+class Feedback(Resource):
     """
     status: 0: get all， 1: get 通过， 2: get 未通过， 3: get 未审批
     startTime:Year-month-day

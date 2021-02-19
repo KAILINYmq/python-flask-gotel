@@ -1,7 +1,7 @@
 from flask import request, make_response
 from flask_restplus import Resource, reqparse
 from agile.commons.api_response import ResposeStatus, ApiResponse
-from agile.models import Activities, Type_table, Name_table
+from agile.models import Activities, Type_table,Details_table
 from agile.extensions import ma, db
 from marshmallow import fields
 from sqlalchemy import and_
@@ -40,7 +40,7 @@ class ActivitiesSchemaName(ma.ModelSchema):
     class Meta:
         include_fk = False
         fields = ("id", "name")
-        model = Name_table
+        model = Details_table
         sqla_session = db.session
 
 # 查询返回type

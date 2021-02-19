@@ -2,15 +2,15 @@
 from agile.extensions import db
 from agile.database import BaseModel
 
-class Learn_type(db.Model):
+class Learn_name(db.Model):
     """
-    Learn_type
+    Learn_name
     """
     __tablename__ = 'learn_type'
     id = db.Column(db.Integer, primary_key=True)
     # 想法ID
     idea_id = db.Column(db.Integer, db.ForeignKey('learn.id'))
-    # 类型ID
+    # 名称ID
     type_id = db.Column(db.Integer, db.ForeignKey('type_table.id'))
     # 创建时间
     creat_time = db.Column(db.DateTime)
