@@ -11,7 +11,7 @@ class Praise(db.Model):
     # 点赞人id
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     # 点赞作品类型
-    type = db.Column(db.Integer, db.ForeignKey('type_table.id'))
+    type = db.Column(db.String(32))
     # 点赞作品id
     work_id = db.Column(db.Integer)
     # 是否点赞
