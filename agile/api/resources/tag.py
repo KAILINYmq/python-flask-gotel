@@ -33,11 +33,15 @@ class ActivityType(Resource):
             return ApiResponse("Search failed! Please try again.", ResposeStatus.Fail)
 
 class TagList(Resource):
-    """Get all tag list"""
+    """Get the type list"""
 
     def get(self):
         try:
-            allName = db.session.query(Tag).all()
+            type = request.args.get("type")
+            if type == "ActivityType":
+                allName = db.session.query(Type_table).all()
+            elif type == "ActivityDetails":
+                pass
             return ApiResponse([name.label for name in allName], ResposeStatus.Success)
         except RuntimeError:
             return ApiResponse("Search failed! Please try again.", ResposeStatus.Fail)

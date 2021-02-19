@@ -2,7 +2,7 @@
 from agile.extensions import db
 from agile.database import BaseModel
 
-class Name_table(db.Model):
+class Type_table(db.Model):
     """
     名称
     """
