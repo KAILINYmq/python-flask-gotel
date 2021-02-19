@@ -34,7 +34,7 @@ class S3Provider:
         self.resource = self.session.resource('s3')
         credentials = self.session.get_credentials()
         self.fs = s3fs.S3FileSystem(key=credentials.access_key, secret=credentials.secret_key,
-                                    token=credentials.token)
+                                    token=credentials.token, client_kwargs={'region_name': self.region})
         self.ts = time.time()
         return self
 
@@ -161,7 +161,7 @@ class Bucket:
         try:
             return s3_client.generate_presigned_url('get_object', Params={
                 'Bucket': self.bucket_name,
-                'Key'   : obj_key
+                'Key': obj_key
             }, ExpiresIn=expiration)
 
         except ClientError as e:
