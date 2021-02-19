@@ -3,9 +3,9 @@ from flask import Blueprint, jsonify
 from flask_restplus import Api
 from agile.api.resources import *
 from agile.api.resources.global_ import Ping
-from agile.api.resources.learning import AddMyLearn,GetAllLearn,SortSearch,UpdataLearn
-from agile.api.resources.idea import AddMyIdea,GetAllIdea,SortSearchIdea,UpdataIdea
-from agile.api.resources.tag import Feedback
+from agile.api.resources.learning import AddMyLearn, GetAllLearn, SortSearch, UpdataLearn, Praises
+from agile.api.resources.idea import AddMyIdea, GetAllIdea, SortSearchIdea, UpdataIdea, PraisesIdea
+from agile.api.resources.tag import Feedback, InsertTag
 
 blueprint = Blueprint("api", __name__, url_prefix="/api/v1")
 
@@ -56,5 +56,5 @@ api.add_resource(PraisesIdea,"/praiseIdea")
 # Tag
 api.add_resource(TagList, "/tag/list")
 api.add_resource(AllTagList, "/allTag/list")
-api.add_resource(Tag, "/tag")
+api.add_resource(InsertTag, "/tag")
 api.add_resource(Feedback, "/feedback")

@@ -6,8 +6,8 @@ from .activities import Activities
 from .idea import Idea
 from .learn import Learn
 from .praise import Praise
-from .details_table import Type_table
-from .type_table import Name_table
+from .details_table import Details_table
+from .type_table import Type_table
 from .guestbook import Guestbook
 from .idea_lab import Idea_lab
 from .idea_type import Idea_name
@@ -29,7 +29,6 @@ __all__ = [
     'Permission',
     'Department',
     'Category',
-    'department_category'
     'TokenBlacklist',
     'Brand',
     'AuditLog',
@@ -38,13 +37,13 @@ __all__ = [
     'idea',
     'learn',
     'praise',
-    'details_table.py',
-    'type_table.py',
+    'details_table',
+    'type_table',
     'guestbook',
     'idea_lab',
-    'idea_type.py',
-    'idea_details.py',
+    'idea_type',
+    'idea_details',
     'learn_lab',
-    'learn_type.py',
-    'learn_details.py',
+    'learn_type',
+    'learn_details',
 ]
