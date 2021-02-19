@@ -1,18 +1,29 @@
-from flask import request
+from flask import request, make_response
 from flask_restplus import Resource, reqparse
 from agile.commons.api_response import ResposeStatus, ApiResponse
 from agile.models import Activities, Type_table, Name_table
 from agile.extensions import ma, db
+from marshmallow import fields
 from sqlalchemy import and_
 from sqlalchemy import or_
-import json
 from datetime import datetime
+import json
+from io import BytesIO
+import xlsxwriter
 
 # 返回单个数据格式
 class ActivitiesSchema(ma.ModelSchema):
     class Meta:
         include_fk = False
         fields = ("id", "active", "active_type", "active_time", "active_object", "idea_name", "learn_name", "description", "image", "video", "status")
+        model = Activities
+        sqla_session = db.session
+
+# 下载
+class ActivitiesSchemaDownload(ma.ModelSchema):
+    class Meta:
+        include_fk = False
+        fields = ("active", "active_type", "active_object", "idea_name", "learn_name", "description", "active_time")
         model = Activities
         sqla_session = db.session
 
@@ -64,14 +75,22 @@ class ActivitiesList(Resource):
         filterList.append(Activities.status == 0)
         try:
             if blurry is not None:
-                object = Activities.query.filter(or_(Activities.active.like('%' + blurry + '%'),
+                object = Activities.query.filter(and_(*filterList, or_(Activities.active.like('%' + blurry + '%'),
                                                      Activities.active_type.like('%' + blurry + '%'),
                                                      Activities.description.like('%' + blurry + '%'),
                                                      Activities.idea_name.like('%' + blurry + '%'),
                                                      Activities.learn_name.like('%' + blurry + '%')
-                                                     )).offset((page - 1) * size).limit(size)
+                                                     ))).offset((page - 1) * size).limit(size)
                 # 3.返回数据
-                return ApiResponse(obj=schema.dump(object, many=True), status=ResposeStatus.Success, msg="OK")
+                data = schema.dump(object, many=True)
+                paginate = Activities.query.filter(and_(*filterList, or_(Activities.active.like('%' + blurry + '%'),
+                                                     Activities.active_type.like('%' + blurry + '%'),
+                                                     Activities.description.like('%' + blurry + '%'),
+                                                     Activities.idea_name.like('%' + blurry + '%'),
+                                                     Activities.learn_name.like('%' + blurry + '%')
+                                                     ))).paginate(page, size)
+                return ApiResponse(obj={"activitiesDataData": data, "pages":paginate.pages},
+                                   status=ResposeStatus.Success, msg="OK")
             else:
                 if name is not None:
                     filterList.append(Activities.active == name)
@@ -85,10 +104,14 @@ class ActivitiesList(Resource):
                 if idea is not None:
                     filterList.append(Activities.learn_name.like('%'+idea+'%'))
                 object = Activities.query.filter(and_(*filterList)).offset((page-1) * size).limit(size)
-                return ApiResponse(obj=schema.dump(object, many=True), status=ResposeStatus.Success, msg="OK")
+                data = schema.dump(object, many=True)
+                paginate = Activities.query.filter(and_(*filterList)).paginate(page, size)
+                return ApiResponse(obj={"activitiesDataData": data, "pages":paginate.pages},
+                                   status=ResposeStatus.Success, msg="OK")
         except Exception:
             return ApiResponse(status=ResposeStatus.ParamFail, msg="参数错误!")
 
+class ActivitiesAdd(Resource):
     def post(self):
         # 新增活动
         parser = reqparse.RequestParser()
@@ -223,14 +246,44 @@ class SingleActivities(Resource):
             return ApiResponse(status=ResposeStatus.Success, msg="OK")
         return ApiResponse(status=ResposeStatus.Success, msg="OK")
 
-class ActivitiesName(Resource):
+class Activity(Resource):
     def get(self):
+        # TODO
         schema = ActivitiesSchemaName()
+        print(Name_table.query.all())
+        print(type(Name_table.query.all()))
         object = schema.dump(Name_table.query.all(), many=True)
         return ApiResponse(obj=object, status=ResposeStatus.Success, msg="OK")
 
-class ActivitiesTypes(Resource):
-    def get(self):
-        schema = ActivitiesSchemaType()
-        object = schema.dump(Type_table.query.all(), many=True)
-        return ApiResponse(obj=object, status=ResposeStatus.Success, msg="OK")
+class Download(Resource):
+    def get(self, activities_id):
+        schema = ActivitiesSchemaDownload()
+        object = schema.dump(Activities.query.filter(and_(Activities.id == activities_id, Activities.is_delete != 1)).first())
+        print(type(object))
+        print(object)
+        response = create_workbook(activities_id, object)
+        response.headers['Content-Type'] = "utf-8"
+        response.headers["Cache-Control"] = "no-cache"
+        response.headers["Content-Disposition"] = "attachment; filename=download.xlsx"
+        return response
+
+def create_workbook(activities_id, object):
+    output = BytesIO()
+    # 创建Excel文件,不保存,直接输出
+    workbook = xlsxwriter.Workbook(output, {'in_memory': True})
+    # 设置Sheet的名字为download
+    worksheet = workbook.add_worksheet('download'+str(activities_id))
+
+    # 列首
+    title = ["active", "active_type", "active_object", "idea_name", "learn_name", "description", "active_time"]
+    worksheet.write_row('A1', object)
+    dictList = [{"a":"a1","b":"b1","c":"c1"}, {"a":"a2","b":"b2","c":"c2"}, {"a":"a3","b":"b3","c":"c3"}]
+    for key in object:
+        # print(key + ':' + object[key])
+        # row = [dictList[i]["a"],dictList[i]["b"], dictList[i]["c"]]
+        print(object[key])
+        worksheet.write_row('A2',  str(object[key]))
+    workbook.close()
+    response = make_response(output.getvalue())
+    output.close()
+    return response
