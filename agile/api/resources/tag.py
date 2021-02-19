@@ -9,15 +9,6 @@ from datetime import date, datetime
 import time
 
 
-class TagList(Resource):
-    """Get all tag list"""
-
-    def get(self):
-        try:
-            allName = db.session.query(Tag).all()
-            return ApiResponse([name.label for name in allName], ResposeStatus.Success)
-        except RuntimeError:
-            return ApiResponse("Search failed! Please try again.", ResposeStatus.Fail)
 
 
 class ActivityName(Resource):
@@ -41,8 +32,22 @@ class ActivityType(Resource):
         except RuntimeError:
             return ApiResponse("Search failed! Please try again.", ResposeStatus.Fail)
 
+class TagList(Resource):
+    """Get the type list"""
 
-class AllList(Resource):
+    def get(self):
+        try:
+            type = request.args.get("type")
+            if type == "ActivityType":
+                allName = db.session.query(Type_table).all()
+            elif type == "ActivityDetails":
+                pass
+            return ApiResponse([name.label for name in allName], ResposeStatus.Success)
+        except RuntimeError:
+            return ApiResponse("Search failed! Please try again.", ResposeStatus.Fail)
+
+
+class AllTagList(Resource):
     """Get all ActivityType"""
 
     def get(self):
@@ -62,7 +67,7 @@ class AllList(Resource):
             return ApiResponse("Search failed! Please try again.", ResposeStatus.Fail)
 
 
-class AddTag(Resource):
+class Tag(Resource):
     """
     添加元素
     tagType:Activity Name,Activity Type,Learnings,Idea,Brand,Category
@@ -110,7 +115,7 @@ class AddTag(Resource):
             return ApiResponse("Insert failed! Please try again.", ResposeStatus.Fail)
 
 
-class ShowFeedback(Resource):
+class Feedback(Resource):
     """
     status: 0: get all， 1: get 通过， 2: get 未通过， 3: get 未审批
     startTime:Year-month-day

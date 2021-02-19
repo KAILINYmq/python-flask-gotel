@@ -2,7 +2,7 @@ from .user import UserResource, UserList, MyProfileResource
 from .file import FileList, S3Url
 from .global_ import DepartmentList, DepartmentDetail, CategoryList, RoleList
 from .audit import AuditLogDetail, UsageReportList
-from .tag import TagList, ActivityName, ActivityType, AllList, AddTag, ShowFeedback
+from .tag import TagList, ActivityName, ActivityType, AllTagList, Tag, Feedback
 from .activities import ActivitiesList, SingleActivities, ActivitiesName, ActivitiesTypes
 
 __all__ = [
@@ -23,11 +23,9 @@ __all__ = [
     "S3Url",
     #tag
     "TagList",
-    "ActivityName",
-    "ActivityType",
-    "AllList",
-    "AddTag",
-    "ShowFeedback",
+    "AllTagList",
+    "Tag",
+    "Feedback",
     # activities
     "ActivitiesList",
     "SingleActivities",
