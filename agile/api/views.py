@@ -33,12 +33,14 @@ api.add_resource(UsageReportList, "/usageReport")
 api.add_resource(Ping, "/ping")
 
 # activities
-api.add_resource(ActivitiesList, "/activities")
+api.add_resource(ActivitiesList, "/activities/list")
+api.add_resource(ActivitiesAdd, "/activities")
 # 查询单个活动、删除活动
 api.add_resource(SingleActivities, "/activities/<int:activities_id>")
-# activities_name、activities_types
-api.add_resource(ActivitiesName, "/activities_name")
-api.add_resource(ActivitiesTypes, "/activities_types")
+# Activity
+api.add_resource(Activity, "/activities/activity")
+# Download
+api.add_resource(Download, "/activities/download/<int:activities_id>")
 
 # learning
 api.add_resource(AddMyLearn, "/addLearn")
