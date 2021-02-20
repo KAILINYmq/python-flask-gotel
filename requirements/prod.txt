@@ -83,3 +83,4 @@ dedupe
 boto3
 blinker
 s3fs
+xlsxwriter
