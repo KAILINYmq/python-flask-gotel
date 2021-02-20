@@ -1,29 +1,21 @@
-from flask import request, make_response
+from flask import make_response, send_from_directory
 from flask_restplus import Resource, reqparse
 from agile.commons.api_response import ResposeStatus, ApiResponse
 from agile.models import Activities, Type_table, Details_table
 from agile.extensions import ma, db
-from marshmallow import fields
+from agile import PROJECT_ROOT
 from sqlalchemy import and_
-from sqlalchemy import or_
+import os, zipfile, re
 from datetime import datetime
-import json
-from io import BytesIO
+import json, shutil
 import xlsxwriter
+import requests
 
 # 返回单个数据格式
 class ActivitiesSchema(ma.ModelSchema):
     class Meta:
         include_fk = False
         fields = ("id", "active", "active_type", "active_time", "active_object", "idea_name", "learn_name", "description", "image", "video", "status")
-        model = Activities
-        sqla_session = db.session
-
-# 下载
-class ActivitiesSchemaDownload(ma.ModelSchema):
-    class Meta:
-        include_fk = False
-        fields = ("active", "active_type", "active_object", "idea_name", "learn_name", "description", "active_time")
         model = Activities
         sqla_session = db.session
 
@@ -45,20 +37,31 @@ class ActivitiesSchemaTypes(ma.ModelSchema):
 
 class ActivitiesList(Resource):
     # /api/v1/activities/list
-    def get(self):
+    def post(self):
         # 查询活动数据
         # 1.获取参数
         try:
-            name = request.args.get('name')
-            type = request.args.get('type')
-            startTime = request.args.get('startTime')
-            endTime = request.args.get('endTime')
-            learn = request.args.get('learn')
-            idea = request.args.get('idea')
-            page = int(request.args.get('page') or 1)
-            size = int(request.args.get('size') or 10)
+            parser = reqparse.RequestParser()
+            parser.add_argument('name')
+            parser.add_argument('type')
+            parser.add_argument('startTime')
+            parser.add_argument('endTime')
+            parser.add_argument('learn')
+            parser.add_argument('idea')
+            parser.add_argument('page', type=int, required=True)
+            parser.add_argument('size', type=int, required=True)
+            args = parser.parse_args()
+            # name = request.args.get('name')
+            # type = request.args.get('type')
+            # startTime = request.args.get('startTime')
+            # endTime = request.args.get('endTime')
+            # learn = request.args.get('learn')
+            # idea = request.args.get('idea')
+            # page = int(request.args.get('page') or 1)
+            # size = int(request.args.get('size') or 10)
             # blurry = request.args.get('blurry')
-        except Exception:
+        except Exception as e:
+            print(e)
             return ApiResponse(status=ResposeStatus.ParamFail, msg="参数错误!")
 
         # 2. 查询参数
@@ -85,18 +88,18 @@ class ActivitiesList(Resource):
             #     return ApiResponse(obj={"activitiesDataData": data, "pages":paginate.pages},
             #                        status=ResposeStatus.Success, msg="OK")
             # else:
-            if name is not None:
-                filterList.append(Activities.active == name)
-            if type is not None:
-                filterList.append(Activities.active_type == type)
-            if startTime and endTime is not None:
-                filterList.append(Activities.create_time >= datetime.strptime(startTime, '%Y-%m-%d  %H:%M:%S'))
-                filterList.append(Activities.create_time <= datetime.strptime(endTime, '%Y-%m-%d  %H:%M:%S'))
-            if learn is not None:
-                filterList.append(Activities.idea_name.like('%'+learn+'%'))
-            if idea is not None:
-                filterList.append(Activities.learn_name.like('%'+idea+'%'))
-            object = Activities.query.filter(and_(*filterList)).offset((page-1) * size).limit(size)
+            if args["name"] is not None:
+                filterList.append(Activities.active == args["name"])
+            if args["type"] is not None:
+                filterList.append(Activities.active_type == args["type"])
+            if args["startTime"] and args["endTime"] is not None:
+                filterList.append(Activities.create_time >= datetime.strptime(args["startTime"], '%Y-%m-%d  %H:%M:%S'))
+                filterList.append(Activities.create_time <= datetime.strptime(args["endTime"], '%Y-%m-%d  %H:%M:%S'))
+            if args["learn"] is not None:
+                filterList.append(Activities.idea_name.like('%'+args["learn"]+'%'))
+            if args["idea"] is not None:
+                filterList.append(Activities.learn_name.like('%'+args["idea"]+'%'))
+            object = Activities.query.filter(and_(*filterList)).offset((args["page"]-1) * args["size"]).limit(args["size"])
             # data = schema.dump(object, many=True)
             datas = []
             for k in object:
@@ -111,10 +114,12 @@ class ActivitiesList(Resource):
                 data["learnTags"] = k.learn_name
                 data["createTime"] = k.create_time
                 datas.append(data)
-            paginate = Activities.query.filter(and_(*filterList)).paginate(page, size)
+            paginate = Activities.query.filter(and_(*filterList)).paginate(args["page"], args["size"])
             return ApiResponse(obj={"activitiesData": datas, "total":paginate.pages},
                                status=ResposeStatus.Success, msg="OK")
-        except Exception:
+        except Exception as e:
+            print(e)
+            print(11111)
             return ApiResponse(status=ResposeStatus.ParamFail, msg="参数错误!")
 
 class ActivitiesAdd(Resource):
@@ -145,6 +150,7 @@ class ActivitiesAdd(Resource):
             parser.add_argument('id', type=int, required=True, help="id cannot be blank!")
             parser.add_argument('idea_name', required=True, help="idea_name cannot be blank!")
             parser.add_argument('learn_name', required=True, help="learn_name cannot be blank!")
+            parser.add_argument('learnId', required=True, help="learnId cannot be blank!")
             args = parser.parse_args()
 
             # 2. 存储数据
@@ -152,6 +158,7 @@ class ActivitiesAdd(Resource):
                 active = Activities.query.filter_by(id=args['id']).first()
                 active.idea_name = args['idea_name']
                 active.learn_name = args['learn_name']
+                active.learn_id = args['learnId']
                 active.status = args['status']
                 db.session.commit()
                 return ApiResponse(obj=json.dumps({"id": active.id}), status=ResposeStatus.Success, msg="OK")
@@ -285,35 +292,66 @@ class Activity(Resource):
         return ApiResponse(obj=datas, status=ResposeStatus.Success, msg="OK")
 
 class Download(Resource):
-    # /api/v1/activities/download/activities_id
     def get(self, activities_id):
-        schema = ActivitiesSchemaDownload()
-        object = schema.dump(Activities.query.filter(and_(Activities.id == activities_id, Activities.is_delete != 1)).first())
-        print(type(object))
-        print(object)
-        response = create_workbook(activities_id, object)
-        response.headers['Content-Type'] = "utf-8"
-        response.headers["Cache-Control"] = "no-cache"
-        response.headers["Content-Disposition"] = "attachment; filename=download.xlsx"
+        # 1.创建文件
+        path = PROJECT_ROOT+"/static/"
+        fileDownloadPath = path.replace('\\', '/')
+        filePath = fileDownloadPath+ str(activities_id)+"/"
+        if os.path.exists(filePath):
+            shutil.rmtree(filePath)
+        os.makedirs(filePath)
+        #  2.存储excel
+        object = Activities.query.filter(and_(Activities.id == activities_id, Activities.is_delete != 1)).first()
+        create_workbook(object, filePath+"Active.xlsx")
+        # 3. 存储图片 存储视频
+        if object.image is not None:
+            imageUrl = re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', str(object.image))
+            if imageUrl is not None:
+                for data in imageUrl:
+                    getFile(filePath, data, "Image"+str(imageUrl.index(data)))
+        if object.video is not None:
+            videoUrl = re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', str(object.video))
+            if videoUrl is not None:
+                for data in videoUrl:
+                    getFile(filePath, data, "Video" + str(videoUrl.index(data)))
+        # 4. 打包zip
+        make_zip(filePath, fileDownloadPath+str(activities_id)+".zip")
+        # 5. 返回zip
+        response = make_response(
+            send_from_directory(fileDownloadPath, str(activities_id)+".zip", as_attachment=True))
         return response
 
-def create_workbook(activities_id, object):
-    output = BytesIO()
+def create_workbook(object, filePath):
     # 创建Excel文件,不保存,直接输出
-    workbook = xlsxwriter.Workbook(output, {'in_memory': True})
-    # 设置Sheet的名字为download
-    worksheet = workbook.add_worksheet('download'+str(activities_id))
-    # TODO
-    # 列首
-    title = ["active", "active_type", "active_object", "idea_name", "learn_name", "description", "active_time"]
-    worksheet.write_row('A1', object)
-    dictList = [{"a":"a1","b":"b1","c":"c1"}, {"a":"a2","b":"b2","c":"c2"}, {"a":"a3","b":"b3","c":"c3"}]
-    for key in object:
-        # print(key + ':' + object[key])
-        # row = [dictList[i]["a"],dictList[i]["b"], dictList[i]["c"]]
-        print(object[key])
-        worksheet.write_row('A2',  str(object[key]))
+    workbook = xlsxwriter.Workbook(filePath)
+    worksheet = workbook.add_worksheet("sheet")
+    title = ["Activity Types", "Activity Details", "Duration Hours", "With Whom",  "Description", "Learnings", "Ideas"]
+    worksheet.write_row('A1', title)
+    worksheet.write_row('A2', [str(object.active),
+                               str(object.active_type),
+                               str(object.active_time),
+                               # TODO 解析object
+                               str(object.active_object),
+                               str(object.description),
+                               # TODO 解析Learn
+                               str(object.learn_name),
+                               #  TODO 解析Idea
+                               str(object.idea_name)
+                               ])
     workbook.close()
-    response = make_response(output.getvalue())
-    output.close()
-    return response
+
+def getFile(filePath, url, fileName):
+    response = requests.get(url).content
+    with open(filePath+fileName+url[-4:], 'wb') as f:
+        f.write(response)
+    print ("Sucessful to download "+fileName)
+
+def make_zip(filePath, source_dir):
+  zipf = zipfile.ZipFile(source_dir, 'w')
+  pre_len = len(os.path.dirname(filePath))
+  for parent, dirnames, filenames in os.walk(filePath):
+    for filename in filenames:
+      pathfile = os.path.join(parent, filename)
+      arcname = pathfile[pre_len:].strip(os.path.sep)
+      zipf.write(pathfile, arcname)
+  zipf.close()
