@@ -3,8 +3,8 @@ from flask import Blueprint, jsonify
 from flask_restplus import Api
 from agile.api.resources import *
 from agile.api.resources.global_ import Ping
-from agile.api.resources.learning import AddMyLearn, GetAllLearn, SortSearch, UpdataLearn, Praises
-from agile.api.resources.idea import AddMyIdea, GetAllIdea, SortSearchIdea, UpdataIdea, PraisesIdea
+from agile.api.resources.learning import AddMyLearn, GetAllLearn, SortSearch, UpdataLearn, Praises,SeachOneLean
+from agile.api.resources.idea import AddMyIdea, GetAllIdea, SortSearchIdea, UpdataIdea, PraisesIdea,SeachOneIdea
 from agile.api.resources.tag import Feedback, InsertTag
 
 blueprint = Blueprint("api", __name__, url_prefix="/api/v1")
@@ -33,19 +33,23 @@ api.add_resource(UsageReportList, "/usageReport")
 api.add_resource(Ping, "/ping")
 
 # activities
-api.add_resource(ActivitiesList, "/activities")
+api.add_resource(ActivitiesList, "/activities/list")
+api.add_resource(ActivitiesAdd, "/activities")
 # 查询单个活动、删除活动
 api.add_resource(SingleActivities, "/activities/<int:activities_id>")
-# activities_name、activities_types
-api.add_resource(ActivitiesName, "/activities_name")
-api.add_resource(ActivitiesTypes, "/activities_types")
+# Activity
+api.add_resource(Activity, "/activities/activity")
+# Download
+api.add_resource(Download, "/activities/download/<int:activities_id>")
 
 # learning
-api.add_resource(AddMyLearn, "/addLearn")
+api.add_resource(AddMyLearn, "/learning")
 api.add_resource(GetAllLearn, "/getAll")
 api.add_resource(SortSearch, "/search")
 api.add_resource(UpdataLearn, "/updata")
 api.add_resource(Praises,"/praise")
+api.add_resource(Praises,"/learning/praise")
+api.add_resource(SeachOneLean,"/learning/detile")
 
 # idea
 api.add_resource(AddMyIdea, "/addIdea")
@@ -53,6 +57,7 @@ api.add_resource(GetAllIdea, "/getAllIdea")
 api.add_resource(SortSearchIdea, "/searchIdea")
 api.add_resource(UpdataIdea, "/updataIdea")
 api.add_resource(PraisesIdea,"/praiseIdea")
+api.add_resource(SeachOneIdea,"/idea/detile")
 
 # Tag
 api.add_resource(TagList, "/tag/list")

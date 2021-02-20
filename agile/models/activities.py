@@ -19,14 +19,16 @@ class Activities(db.Model):
     # 描述
     description = db.Column(db.String(164))
     # 图片
-    image = db.Column(db.String(164))
+    image = db.Column(db.String(1024))
     # 视频
-    video = db.Column(db.String(164))
+    video = db.Column(db.String(1024))
 
     # 创意
     idea_name = db.Column(db.String(164))
     # 学习
     learn_name = db.Column(db.String(164))
+    # learn_id
+    learn_id = db.Column(db.String(164))
 
     # 创建时间
     create_time = db.Column(db.DateTime, default=datetime.datetime.now)

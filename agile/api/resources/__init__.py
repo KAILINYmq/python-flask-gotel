@@ -3,8 +3,9 @@ from .user import UserResource, UserList, MyProfileResource
 from .file import FileList, S3Url
 from .global_ import DepartmentList, DepartmentDetail, CategoryList, RoleList
 from .audit import AuditLogDetail, UsageReportList
+from .activities import ActivitiesAdd, ActivitiesList, SingleActivities, Activity, Download
 from .tag import TagList, AllTagList, InsertTag, Feedback
-from .activities import ActivitiesList, SingleActivities, ActivitiesName, ActivitiesTypes
+from .activities import ActivitiesAdd, ActivitiesList, SingleActivities, Activity, Download
 
 __all__ = [
     # user
@@ -34,4 +35,7 @@ __all__ = [
     "ActivitiesTypes",
     # login
     "GetHighLightDate",
+    "Activity",
+    "Download",
+    "ActivitiesAdd",
 ]
