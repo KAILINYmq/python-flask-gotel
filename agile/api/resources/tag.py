@@ -34,10 +34,8 @@ class TagList(Resource):
                 allName = db.session.query(Tag).filter_by(label_type=type).all()
                 return ApiResponse([name.label for name in allName], ResposeStatus.Success)
 
-
         except RuntimeError:
             return ApiResponse("Search failed! Please try again.", ResposeStatus.Fail)
-
 
 class AllTagList(Resource):
     """Get all ActivityType"""
@@ -46,51 +44,49 @@ class AllTagList(Resource):
         try:
             result = {}
             allName = db.session.query(Type_table).all()
-            result["ActivityType"] = [name.name for name in allName]
+            result["activityType"] = [name.name for name in allName]
 
             allName = db.session.query(Details_table).all()
-            result["ActivityType"] = [name.name for name in allName]
+            result["activityDetails"] = [name.name for name in allName]
 
             allName = db.session.query(Tag).all()
-            result["Tag"] = [name.label for name in allName]
+            result["tag"] = [name.label for name in allName]
 
             return ApiResponse(result, ResposeStatus.Success)
         except RuntimeError:
             return ApiResponse("Search failed! Please try again.", ResposeStatus.Fail)
 
-
 class InsertTag(Resource):
     """
     添加元素
-    tagType:Activity Name,Activity Type,Learnings,Idea,Brand,Category
-    name: 当选择Activity name的时候，要选择一个类型的名字
-    description:标签值
+    tagType:ActivityDetails,ActivityType,Learnings,Idea,Brand,Category
+    activityType:当选择Activity Type的时候，要选择一个details
+    durationHours:持续时间（以小时为单位）
+    name:标签值
     """
 
     def post(self):
         try:
             localtime = time.strftime("%Y-%m-%d", time.localtime())
             data = json.loads(request.get_data(as_text=True))
-            if data["tagType"] == "Activity Name":
-                typeTab = Type_table()
-                typeTab.name = data["description"]
-                typeTab.name_type = "Activity Type"
-                name = db.session.query(Details_table).filter_by(name=data["name"]).first_or_404()
-                nameId = name.id
-                typeTab.name_id = int(nameId)
-                typeTab.creat_time = localtime
-                db.session.add(typeTab)
+            if data["tagType"] == "ActivityDetails":
+                detailsTab = Details_table()
+                detailsTab.name = data["name"]
+                type = db.session.query(Type_table).filter_by(name=data["activityType"]).first_or_404()
+                detailsTab.type_id = int(type.id)
+                detailsTab.creat_time = localtime
+                db.session.add(detailsTab)
                 db.session.commit()
-            elif data["tagType"] == "Activity Type":
+            elif data["tagType"] == "ActivityType":
                 typeTab = Type_table()
-                typeTab.name = data["description"]
-                typeTab.name_type = "Activity Type"
+                typeTab.name = data["name"]
                 typeTab.creat_time = localtime
+                typeTab.duration_hours = int(data["durationHours"])
                 db.session.add(typeTab)
                 db.session.commit()
             else:
                 tagTab = Tag()
-                tagTab.label = data["description"]
+                tagTab.label = data["name"]
                 if data["tagType"] == "Learnings":
                     tagTab.label_type = "Learnings"
                 elif data["tagType"] == "Brand":
@@ -99,13 +95,12 @@ class InsertTag(Resource):
                     tagTab.label_type = "Idea"
                 elif data["tagType"] == "Category":
                     tagTab.label_type = "Category"
-                tagTab.creat_time = localtime
+                tagTab.create_time = localtime
                 db.session.add(tagTab)
                 db.session.commit()
             return ApiResponse("Already insert tag", ResposeStatus.Success)
         except RuntimeError:
             return ApiResponse("Insert failed! Please try again.", ResposeStatus.Fail)
-
 
 class Feedback(Resource):
     """
