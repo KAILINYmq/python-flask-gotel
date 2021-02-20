@@ -43,13 +43,12 @@ api.add_resource(Activity, "/activities/activity")
 api.add_resource(Download, "/activities/download/<int:activities_id>")
 
 # learning
-api.add_resource(AddMyLearn, "/addLearn")
+api.add_resource(AddMyLearn, "/learning")
 api.add_resource(GetAllLearn, "/getAll")
 api.add_resource(SortSearch, "/search")
 api.add_resource(UpdataLearn, "/updata")
-api.add_resource(Praises,"/praise")
-api.add_resource(SeachOneLean,"/searchOne")
-
+api.add_resource(Praises,"/learning/praise")
+api.add_resource(SeachOneLean,"/learning/detile")
 
 # idea
 api.add_resource(AddMyIdea, "/addIdea")
@@ -57,7 +56,7 @@ api.add_resource(GetAllIdea, "/getAllIdea")
 api.add_resource(SortSearchIdea, "/searchIdea")
 api.add_resource(UpdataIdea, "/updataIdea")
 api.add_resource(PraisesIdea,"/praiseIdea")
-api.add_resource(SeachOneIdea,"/searchOneIdea")
+api.add_resource(SeachOneIdea,"/idea/detile")
 
 # Tag
 api.add_resource(TagList, "/tag/list")

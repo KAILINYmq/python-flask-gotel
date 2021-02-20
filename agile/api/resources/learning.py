@@ -6,7 +6,7 @@ from flask_jwt_extended import current_user
 from flask_jwt_extended import jwt_required
 import json
 import time
-from agile.models import Learn,Learn_lab, Learn_name,Learn_type,Tag,Praise,Idea
+from agile.models import Learn,Learn_lab, Learn_name,Learn_type,Tag,Praise,Idea,Activities
 from sqlalchemy import func
 from sqlalchemy import distinct
 
@@ -20,8 +20,12 @@ class AddMyLearn(Resource):
         if student:
             return ApiResponse("", ResposeStatus.Fail,"该名字已经存在")
         # user =Learn.session.filter(func.lower(User.email) == func.lower(email))
-        new_user = Learn(name=data["name"],description=data["description"],idea_id =data["ideaIdList"],image = data["image"], video= data["video"], creat_time=now, update_time=now)
+        new_user = Learn(name=data["name"],description=data["description"],idea_id = str(data["ideaIdList"]), active_id=data["activeId"], creat_time=now, update_time=now)
         session.add(new_user)
+        session.commit()
+        for id in data["ideaIdList"]:
+            ideadata = session.query(Idea).filter(Idea.id == id).first()
+            ideadata.learning_id = new_user.id
         session.commit()
         tag = data["tag"]
         learning = session.query(Learn).filter(Learn.name == data["name"]).first()
@@ -355,7 +359,6 @@ class SeachOneLean(Resource):
                     ideaDict = {}
                     idea = session.query(Idea).filter(Idea.id == val).first()
                     if idea is not None:
-
                         ideaDict["id"] = idea.id
                         ideaDict["name"] = idea.name
                         ideaDict["description"] = idea.description
@@ -363,7 +366,26 @@ class SeachOneLean(Resource):
                         ideaDict["image"] = idea.image
                         ideaDict["video"] = idea.video
                         IdeaData.append(ideaDict)
-            dict["Idea"] = IdeaData
+            dict["idea"] = IdeaData
+            print(value.active_id)
+            activedict = {}
+            if value.active_id is not None:
+                active = session.query(Activities).filter(Activities.id == value.active_id).first()
+                activedict["name"] = active.active
+                activedict["activeType"] = active.active_type
+                activedict["activeTime"] = active.active_time
+                activedict["description"] = active.description
+                activedict["image"] = active.image
+                activedict["video"] = active.video
+                print(activedict)
+            dict["active"] = activedict
+            # active = session.query(Activities).all()
+            # dictactive = {}
+            # for val in active:
+            #     if id in val.idea_name:
+            #         dictactive[""] = val.active
+            #         =val.active_type
+            #         =val.active_time
             return ApiResponse(dict, ResposeStatus.Success)
 def intersect(nums1, nums2):
   import collections

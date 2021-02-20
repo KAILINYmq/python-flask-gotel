@@ -6,7 +6,7 @@ from flask_restplus import Resource
 from flask_jwt_extended import current_user
 from agile.commons.api_response import ResposeStatus, ApiResponse
 from agile.extensions import db
-from agile.models import Idea, Idea_lab ,Tag,Praise
+from agile.models import Idea, Idea_lab ,Tag,Praise,Learn,Activities
 from flask_jwt_extended import jwt_required
 
 from sqlalchemy import func
@@ -14,19 +14,20 @@ from sqlalchemy import distinct
 # 新增学习
 class AddMyIdea(Resource):
     def post(self):
+        now = time.strftime('%Y-%m-%d', time.localtime(time.time()))
         data = json.loads(request.get_data(as_text=True))
         session = db.session
         student = session.query(Idea).filter(Idea.name == data["name"]).first()
         if student:
             return ApiResponse("", ResposeStatus.Fail, "该名字已经存在")
-        new_user = Idea(name=data["name"], description=data["description"])
+        new_user = Idea(name=data["name"], description=data["description"],creat_time=now, update_time=now)
         session.add(new_user)
         session.commit()
         tag = data["tag"]
         learning = session.query(Idea).filter(Idea.name == data["name"]).first()
         now = time.strftime('%Y-%m-%d', time.localtime(time.time()))
         for value in tag:
-            new_learn_lable = Idea_lab(idea_id=learning.id, tag_id=value,image=data["image"], video=data["video"], creat_time=now, update_time=now, is_delete=0)
+            new_learn_lable = Idea_lab(idea_id=learning.id, tag_id=value, creat_time=now, update_time=now, is_delete=0)
             session.add(new_learn_lable)
 
         for value in data["brand"]:
@@ -295,9 +296,25 @@ class SeachOneIdea(Resource):
         # dict["tag"] = tagName
         dict["barnd"] = brandName
         dict["category"] = categoryName
+        learn = session.query(Learn).filter(Learn.id == value.learning_id).first()
+        learndict ={}
+        learndict["id"] = learn.id
+        learndict["name"] = learn.name
+        learndict["description"] = learn.description
+        learndict["image"] = learn.image
+        learndict["video"] = learn.video
+        learndict["time"] = learn.update_time
+        dict["learning"] = learndict
+        active = session.query(Activities).filter(Activities.id == learn.active_id).first()
+        activedict = {}
+        activedict["name"] = active.active
+        activedict["activeType"] = active.active_type
+        activedict["activeTime"] = active.active_time
+        activedict["description"] = active.description
+        activedict["image"] = active.image
+        activedict["video"] = active.video
+        dict["active"] = activedict
         return ApiResponse(dict, ResposeStatus.Success)
-
-
 
 def intersect(nums1, nums2):
     import collections
