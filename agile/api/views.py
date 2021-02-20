@@ -46,6 +46,7 @@ api.add_resource(GetAllLearn, "/getAll")
 api.add_resource(SortSearch, "/search")
 api.add_resource(UpdataLearn, "/updata")
 api.add_resource(Praises,"/praise")
+
 # idea
 api.add_resource(AddMyIdea, "/addIdea")
 api.add_resource(GetAllIdea, "/getAllIdea")
@@ -58,3 +59,6 @@ api.add_resource(TagList, "/tag/list")
 api.add_resource(AllTagList, "/allTag/list")
 api.add_resource(InsertTag, "/tag")
 api.add_resource(Feedback, "/feedback")
+
+# login
+api.add_resource(GetHighLightDate, "/highLightDate/list")
