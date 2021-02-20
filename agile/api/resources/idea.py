@@ -9,6 +9,8 @@ from agile.extensions import db
 from agile.models import Idea, Idea_lab ,Tag,Praise
 from flask_jwt_extended import jwt_required
 
+from sqlalchemy import func
+from sqlalchemy import distinct
 # 新增学习
 class AddMyIdea(Resource):
     def post(self):
@@ -24,7 +26,7 @@ class AddMyIdea(Resource):
         learning = session.query(Idea).filter(Idea.name == data["name"]).first()
         now = time.strftime('%Y-%m-%d', time.localtime(time.time()))
         for value in tag:
-            new_learn_lable = Idea_lab(idea_id=learning.id, tag_id=value, creat_time=now, update_time=now, is_delete=0)
+            new_learn_lable = Idea_lab(idea_id=learning.id, tag_id=value,image=data["image"], video=data["video"], creat_time=now, update_time=now, is_delete=0)
             session.add(new_learn_lable)
 
         for value in data["brand"]:
@@ -44,14 +46,23 @@ class AddMyIdea(Resource):
 # 查询学习的所有数据
 class GetAllIdea(Resource):
     def get(self):
+        size = int(request.args.get("size"))
+        page = int(request.args.get("page"))
         session = db.session
-        student = session.query(Idea).all()
+        student = session.query(Idea).limit(size).offset((page-1)*size).all()
         data = []
         for value in student:
+            parasnum = session.query(func.count(distinct(Praise.id))).filter(Praise.work_id == value.id,
+                                                                             Praise.type == "idea",
+                                                                             Praise.is_give == 1).scalar()
             dict = {}
+            dict["paraseNum"] = parasnum
             dict["id"] = value.id
             dict["name"] = value.name
             dict["description"] = value.description
+            dict["time"] = value.update_time
+            dict["image"] = value.image
+            dict["video"] = value.video
             labId = session.query(Idea_lab).filter(Idea_lab.idea_id == value.id).all()
             tagName = []
             brandName = []
@@ -76,72 +87,121 @@ class GetAllIdea(Resource):
 # 根据tag,brand，category进行查询
 class SortSearchIdea(Resource):
 
-    def get(self):
-        tag = request.args.get("tag")
-        brand = request.args.get("brand")
-        category = request.args.get("category")
-        sortTime = request.args.get("sort")
-        session = db.session
-        tagnum = []
-        # brandnum = []
-        # categorynum = []
-        tagList = session.query(Idea_lab).filter(Idea_lab.tag_id == tag).all()
-        for val in tagList:
-            tagnum.append(val.idea_id)
-        brandList = session.query(Idea_lab).filter(Idea_lab.tag_id == brand).all()
-        for val in brandList:
-            tagnum.append(val.idea_id)
-        categoryList = session.query(Idea_lab).filter(Idea_lab.tag_id == category).all()
-        for val in categoryList:
-            tagnum.append(val.idea_id)
-
-        # listNums = []
-        # if len(tagnum) and len(brandnum) and len(categorynum):
-        #     listNums = intersect(tagnum, brandnum)
-        #     listNums = intersect(listNums, categorynum)
-        # elif len(tagnum) & len(categorynum):
-        #     listNums = intersect(tagnum, categorynum)
-        # elif len(categorynum) & len(brandnum):
-        #     listNums = intersect(brandnum, categorynum)
-        # elif len(tagnum) & len(brandnum):
-        #     listNums = intersect(tagnum, brandnum)
-        # elif len(tagnum):
-        #     listNums = tagnum
-        # elif len(brandnum):
-        #     listNums = brandnum
-        # elif len(categorynum):
-        #     listNums = categorynum
-        # listNums = intersect(listNums,categorynum)
-        # # .order_by(User.create_time.desc())
-        if sortTime is None:
-            result_six = session.query(Idea).filter(Idea.id.in_(tagnum))
+    def post(self):
+        data = json.loads(request.get_data(as_text=True))
+        tag = data["tag"]
+        brand = data["brand"]
+        category = data["category"]
+        sortTime = data["sort"]
+        page = int(data["page"])
+        size = int(data["size"])
+        if tag == 0 and brand == 0 and category == 0:
+            session = db.session
+            if sortTime is None:
+                student = session.query(Idea).limit(size).offset((page-1)*size).all()
+            else:
+                student = session.query(Idea).limit(size).offset((page-1)*size).order_by(Idea.update_time.asc()).all()
+            data = []
+            for value in student:
+                parasnum = session.query(func.count(distinct(Praise.id))).filter(Praise.work_id == value.id,
+                                                                                 Praise.type == "idea",
+                                                                                 Praise.is_give == 1).scalar()
+                dict = {}
+                dict["paraseNum"] = parasnum
+                dict["id"] = value.id
+                dict["name"] = value.name
+                dict["description"] = value.description
+                dict["time"] = value.update_time
+                dict["image"] = value.image
+                dict["video"] = value.video
+                labId = session.query(Idea_lab).filter(Idea_lab.idea_id == value.id).all()
+                tagName = []
+                brandName = []
+                categoryName = []
+                for id in labId:
+                    # print(id,"=================")
+                    labIds = session.query(Tag).filter(Tag.id == id.tag_id).all()
+                    for lab in labIds:
+                        if lab.label_type == "Brand":
+                            brandName.append(lab.label)
+                        elif lab.label_type == "Category":
+                            categoryName.append(lab.label)
+                        else:
+                            tagName.append(lab.label)
+                # dict["tag"] = tagName
+                dict["barnd"] = brandName
+                dict["category"] = categoryName
+                data.append(dict)
+            return ApiResponse(data, ResposeStatus.Success)
         else:
-            result_six = session.query(Idea).filter(Idea.id.in_(tagnum)).order_by(Idea.update_time.asc())
-        data = []
-        for val in result_six:
-            dict = {}
-            dict["id"] = val.id
-            dict["name"] = val.name
-            dict["description"] = val.description
-            labId = session.query(Idea_lab).filter(Idea_lab.idea_id == val.id).all()
-            tagName = []
-            brandName = []
-            categoryName = []
-            for id in labId:
-                # print(id,"=================")
-                labIds = session.query(Tag).filter(Tag.id == id.tag_id).all()
-                for lab in labIds:
-                    if lab.label_type == "Brand":
-                        brandName.append(lab.label)
-                    elif lab.label_type == "Category":
-                        categoryName.append(lab.label)
-                    else:
-                        tagName.append(lab.label)
-            # dict["tag"] = tagName
-            dict["barnd"] = brandName
-            dict["category"] = categoryName
-            data.append(dict)
-        return ApiResponse(data, ResposeStatus.Success)
+            session = db.session
+            tagnum = []
+            # brandnum = []
+            # categorynum = []
+            tagList = session.query(Idea_lab).filter(Idea_lab.tag_id == tag).all()
+            for val in tagList:
+                tagnum.append(val.idea_id)
+            brandList = session.query(Idea_lab).filter(Idea_lab.tag_id == brand).all()
+            for val in brandList:
+                tagnum.append(val.idea_id)
+            categoryList = session.query(Idea_lab).filter(Idea_lab.tag_id == category).all()
+            for val in categoryList:
+                tagnum.append(val.idea_id)
+
+            # listNums = []
+            # if len(tagnum) and len(brandnum) and len(categorynum):
+            #     listNums = intersect(tagnum, brandnum)
+            #     listNums = intersect(listNums, categorynum)
+            # elif len(tagnum) & len(categorynum):
+            #     listNums = intersect(tagnum, categorynum)
+            # elif len(categorynum) & len(brandnum):
+            #     listNums = intersect(brandnum, categorynum)
+            # elif len(tagnum) & len(brandnum):
+            #     listNums = intersect(tagnum, brandnum)
+            # elif len(tagnum):
+            #     listNums = tagnum
+            # elif len(brandnum):
+            #     listNums = brandnum
+            # elif len(categorynum):
+            #     listNums = categorynum
+            # listNums = intersect(listNums,categorynum)
+            # # .order_by(User.create_time.desc())
+            if sortTime is None:
+                result_six = session.query(Idea).filter(Idea.id.in_(tagnum))
+            else:
+                result_six = session.query(Idea).filter(Idea.id.in_(tagnum)).order_by(Idea.update_time.asc())
+            data = []
+            for val in result_six:
+                parasnum = session.query(func.count(distinct(Praise.id))).filter(Praise.work_id == val.id,
+                                                                                 Praise.type == "idea",
+                                                                                 Praise.is_give == 1).scalar()
+                dict = {}
+                dict["paraseNum"] = parasnum
+                dict["id"] = val.id
+                dict["name"] = val.name
+                dict["description"] = val.description
+                dict["time"] = val.creat_time
+                dict["image"] = val.image
+                dict["video"] = val.video
+                labId = session.query(Idea_lab).filter(Idea_lab.idea_id == val.id).all()
+                tagName = []
+                brandName = []
+                categoryName = []
+                for id in labId:
+                    # print(id,"=================")
+                    labIds = session.query(Tag).filter(Tag.id == id.tag_id).all()
+                    for lab in labIds:
+                        if lab.label_type == "Brand":
+                            brandName.append(lab.label)
+                        elif lab.label_type == "Category":
+                            categoryName.append(lab.label)
+                        else:
+                            tagName.append(lab.label)
+                # dict["tag"] = tagName
+                dict["barnd"] = brandName
+                dict["category"] = categoryName
+                data.append(dict)
+            return ApiResponse(data, ResposeStatus.Success)
 
 
 # 修改
@@ -201,6 +261,43 @@ class PraisesIdea(Resource):
                 learn.is_give = 1
             session.commit()
         return ApiResponse("sucess",ResposeStatus.Success)
+
+class SeachOneIdea(Resource):
+    def get(self):
+        id = request.args.get("id")
+        session = db.session
+        value = session.query(Idea).filter(Idea.id == id).first()
+        parasnum = session.query(func.count(distinct(Praise.id))).filter(Praise.work_id == value.id,
+                                                                         Praise.type == "idea",
+                                                                         Praise.is_give == 1).scalar()
+        dict = {}
+        dict["paraseNum"] = parasnum
+        dict["id"] = value.id
+        dict["name"] = value.name
+        dict["description"] = value.description
+        dict["time"] = value.update_time
+        dict["image"] = value.image
+        dict["video"] = value.video
+        labId = session.query(Idea_lab).filter(Idea_lab.idea_id == value.id).all()
+        tagName = []
+        brandName = []
+        categoryName = []
+        for id in labId:
+            # print(id,"=================")
+            labIds = session.query(Tag).filter(Tag.id == id.tag_id).all()
+            for lab in labIds:
+                if lab.label_type == "Brand":
+                    brandName.append(lab.label)
+                elif lab.label_type == "Category":
+                    categoryName.append(lab.label)
+                else:
+                    tagName.append(lab.label)
+        # dict["tag"] = tagName
+        dict["barnd"] = brandName
+        dict["category"] = categoryName
+        return ApiResponse(dict, ResposeStatus.Success)
+
+
 
 def intersect(nums1, nums2):
     import collections
