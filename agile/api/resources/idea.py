@@ -140,8 +140,9 @@ class SortSearchIdea(Resource):
                 dict["barnd"] = brandName
                 dict["category"] = categoryName
                 data.append(dict)
-            dicts["data"] = dict
-            return ApiResponse(data, ResposeStatus.Success)
+            dicts["data"] = data
+            session.commit()
+            return ApiResponse(dicts, ResposeStatus.Success)
         else:
             session = db.session
             tagnum = []
@@ -157,7 +158,7 @@ class SortSearchIdea(Resource):
             for val in categoryList:
                 tagnum.append(val.idea_id)
 
-            countTotle = session.query(func.count(distinct(Idea.id))).scalar()
+            countTotle = session.query(func.count(distinct(Idea.id))).filter(Idea.id.in_(tagnum)).scalar()
             dicts = {}
             if countTotle % size == 0:
                 dicts["TotleNum"] = int(countTotle / size)
@@ -198,8 +199,9 @@ class SortSearchIdea(Resource):
                 dict["barnd"] = brandName
                 dict["category"] = categoryName
                 data.append(dict)
-            dicts["data"]=dict
-            return ApiResponse(data, ResposeStatus.Success)
+            dicts["data"]=data
+            session.commit()
+            return ApiResponse(dicts, ResposeStatus.Success)
 
 
 # 修改
