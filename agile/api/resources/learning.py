@@ -176,7 +176,8 @@ class SortSearch(Resource):
                             IdeaData.append(ideaDict)
                 dict["idea"] = IdeaData
                 data.append(dict)
-            dicts["data"] = dict
+            dicts["data"] = data
+            session.commit()
             return ApiResponse(dicts, ResposeStatus.Success)
         else:
             session = db.session
@@ -251,7 +252,8 @@ class SortSearch(Resource):
                             IdeaData.append(ideaDict)
                 dict["Idea"] = IdeaData
                 data.append(dict)
-            dicts["data"]=dict
+            dicts["data"]=data
+            session.commit()
             return ApiResponse(dicts, ResposeStatus.Success)
 
 # 修改
