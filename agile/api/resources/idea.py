@@ -102,7 +102,14 @@ class SortSearchIdea(Resource):
                 student = session.query(Idea).limit(size).offset((page-1)*size).all()
             else:
                 student = session.query(Idea).limit(size).offset((page-1)*size).order_by(Idea.update_time.asc()).all()
+
             data = []
+            countTotle = session.query(func.count(distinct(Idea.id))).scalar()
+            dicts = {}
+            if countTotle % size == 0:
+                dicts["TotleNum"] = int(countTotle / size)
+            else:
+                dicts["TotleNum"] = int(countTotle / size) + 1
             for value in student:
                 parasnum = session.query(func.count(distinct(Praise.id))).filter(Praise.work_id == value.id,
                                                                                  Praise.type == "idea",
@@ -133,7 +140,9 @@ class SortSearchIdea(Resource):
                 dict["barnd"] = brandName
                 dict["category"] = categoryName
                 data.append(dict)
-            return ApiResponse(data, ResposeStatus.Success)
+            dicts["data"] = data
+            session.commit()
+            return ApiResponse(dicts, ResposeStatus.Success)
         else:
             session = db.session
             tagnum = []
@@ -149,24 +158,12 @@ class SortSearchIdea(Resource):
             for val in categoryList:
                 tagnum.append(val.idea_id)
 
-            # listNums = []
-            # if len(tagnum) and len(brandnum) and len(categorynum):
-            #     listNums = intersect(tagnum, brandnum)
-            #     listNums = intersect(listNums, categorynum)
-            # elif len(tagnum) & len(categorynum):
-            #     listNums = intersect(tagnum, categorynum)
-            # elif len(categorynum) & len(brandnum):
-            #     listNums = intersect(brandnum, categorynum)
-            # elif len(tagnum) & len(brandnum):
-            #     listNums = intersect(tagnum, brandnum)
-            # elif len(tagnum):
-            #     listNums = tagnum
-            # elif len(brandnum):
-            #     listNums = brandnum
-            # elif len(categorynum):
-            #     listNums = categorynum
-            # listNums = intersect(listNums,categorynum)
-            # # .order_by(User.create_time.desc())
+            countTotle = session.query(func.count(distinct(Idea.id))).filter(Idea.id.in_(tagnum)).scalar()
+            dicts = {}
+            if countTotle % size == 0:
+                dicts["TotleNum"] = int(countTotle / size)
+            else:
+                dicts["TotleNum"] = int(countTotle / size) + 1
             if sortTime is None:
                 result_six = session.query(Idea).filter(Idea.id.in_(tagnum))
             else:
@@ -202,7 +199,9 @@ class SortSearchIdea(Resource):
                 dict["barnd"] = brandName
                 dict["category"] = categoryName
                 data.append(dict)
-            return ApiResponse(data, ResposeStatus.Success)
+            dicts["data"]=data
+            session.commit()
+            return ApiResponse(dicts, ResposeStatus.Success)
 
 
 # 修改
@@ -306,7 +305,6 @@ class SeachOneIdea(Resource):
         learndict["video"] = learn.video
         learndict["time"] = learn.update_time
         dict["learning"] = learndict
-        print(learn.active_id,"ddadw!111111111111")
         active = session.query(Activities).filter(Activities.id == learn.active_id).first()
         activedict = {}
         activedict["name"] = active.active
@@ -387,10 +385,10 @@ def SaveActiveAndIdea(activeIds,datas):
                                             is_delete=0)
                 session.add(new_learn_lable)
 
-            for value in lern["category"]:
-                new_learn_lable = Learn_lab(idea_id=learning.id, tag_id=value, creat_time=now, update_time=now,
+            # for value in lern["category"]:
+            new_learn_lable = Learn_lab(idea_id=learning.id, tag_id=lern["category"], creat_time=now, update_time=now,
                                             is_delete=0)
-                session.add(new_learn_lable)
+            session.add(new_learn_lable)
             session.commit()
             for idea in lern["ideas"]:
                 # now = time.strftime('%Y-%m-%d', time.localtime(time.time()))
@@ -415,10 +413,10 @@ def SaveActiveAndIdea(activeIds,datas):
                                                is_delete=0)
                     session.add(new_learn_lable)
 
-                for value in idea["category"]:
-                    new_learn_lable = Idea_lab(idea_id=learning.id, tag_id=value, creat_time=now, update_time=now,
+                # for value in idea["category"]:
+                new_learn_lable = Idea_lab(idea_id=learning.id, tag_id=idea["category"], creat_time=now, update_time=now,
                                                is_delete=0)
-                    session.add(new_learn_lable)
+                session.add(new_learn_lable)
                 idealist.append(new_users.id)
                 session.commit()
             learninfo = session.query(Learn).filter(Learn.id == new_user.id).first()

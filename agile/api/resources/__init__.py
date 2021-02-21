@@ -1,4 +1,4 @@
-from .login import GetHighLightDate
+from .login import GetHighLightDate, GetAllTotal, GetSplitTotal
 from .user import UserResource, UserList, MyProfileResource
 from .file import FileList, S3Url
 from .global_ import DepartmentList, DepartmentDetail, CategoryList, RoleList
@@ -38,4 +38,7 @@ __all__ = [
     "Download",
     # login
     "GetHighLightDate",
+    "GetAllTotal",
+    "GetSplitTotal",
+
 ]
