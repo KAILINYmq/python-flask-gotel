@@ -1,6 +1,5 @@
 from flask import request, json
 from flask_restplus import Resource
-from sqlalchemy import and_, between
 
 from agile.commons.api_response import ApiResponse, ResposeStatus
 from agile.models import Tag, Guestbook, Type_table, Details_table
@@ -215,10 +214,11 @@ class Feedback(Resource):
 
             db.session.add(guestbookTab)
             db.session.commit()
-            return ApiResponse("Already submit feedbook." , ResposeStatus.Success)
+            return ApiResponse("Already submit feedbook.", ResposeStatus.Success)
         except RuntimeError:
             return ApiResponse("Search failed! Please try again.", ResposeStatus.Fail)
         pass
+
 
 def timeConvert(startTime, endTime):
     """转换时间"""
