@@ -74,24 +74,27 @@ class ActivitiesList(Resource):
             datas = []
             for k in object:
                 data = {}
+                data["image"] = []
+                data["video"] = []
                 data["id"] = k.id
                 data["activeName"] = k.active
                 data["activeType"] = k.active_type
                 data["description"] = k.description
-                data["image"], data["video"], data["ideaTags"], data["learnTags"] = SelectLearnIdea(k.id)
-                data["image"] = re.findall(
-                    'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', str(data["image"]))
-                print(data["image"])
-                # print(s3file.DEFAULT_BUCKET.generate_presigned_url(obj_key="GOTFL/1613881867image.png"))
-                data["video"] = re.findall(
-                    'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', str(data["video"]))
+                image, video, data["ideaTags"], data["learnTags"] = SelectLearnIdea(k.id)
+                img = re.findall('GOTFL[^\"]*', str(image))
+                vid = re.findall('GOTFL[^\"]*', str(video))
+                if img is not None:
+                    for i in img:
+                        data["image"].append(s3file.DEFAULT_BUCKET.generate_presigned_url(obj_key=i))
+                if vid is not None:
+                    for v in vid:
+                        data["video"].append(s3file.DEFAULT_BUCKET.generate_presigned_url(obj_key=v))
                 data["createTime"] = k.create_time
                 datas.append(data)
             paginate = Activities.query.filter(and_(*filterList)).paginate(args["page"], args["size"])
             return ApiResponse(obj={"activitiesData": datas, "total":paginate.pages},
                                status=ResposeStatus.Success, msg="OK")
         except Exception as e:
-            print(e)
             return ApiResponse(status=ResposeStatus.ParamFail, msg="参数错误!")
 
 def SelectLearnIdea(id):
@@ -286,19 +289,15 @@ class Download(Resource):
         object = Activities.query.filter(and_(Activities.id == activities_id, Activities.is_delete != 1)).first()
         image, video, idea, learn = SelectLearnIdea(object.id)
         create_workbook(object, filePath+"Active.xlsx", idea, learn)
+        img = re.findall('GOTFL[^\"]*', str(image))
+        vid = re.findall('GOTFL[^\"]*', str(video))
         # 3. 存储图片 存储视频
-        if image is not None:
-            print(str(image))
-            imageUrl = re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', str(image))
-            if imageUrl is not None:
-                print(imageUrl)
-                for data in imageUrl:
-                    getFile(filePath, data, "Image"+str(imageUrl.index(data)))
-        if video is not None:
-            videoUrl = re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', str(video))
-            if videoUrl is not None:
-                for data in videoUrl:
-                    getFile(filePath, data, "Video" + str(videoUrl.index(data)))
+        if img is not None:
+            for i in img:
+                getFile(filePath, s3file.DEFAULT_BUCKET.generate_presigned_url(obj_key=i), "Image-" + str(i.index(i))+i[-4:])
+        if vid is not None:
+            for v in vid:
+                getFile(filePath, s3file.DEFAULT_BUCKET.generate_presigned_url(obj_key=v), "Video-" + str(v.index(v))+v[-4:])
         # 4. 打包zip
         make_zip(filePath, fileDownloadPath+str(activities_id)+".zip")
         # 5. 返回zip
@@ -325,7 +324,7 @@ def create_workbook(object, filePath, idea, learn):
 
 def getFile(filePath, url, fileName):
     response = requests.get(url).content
-    with open(filePath+fileName+url[-4:], 'wb') as f:
+    with open(filePath+fileName, 'wb') as f:
         f.write(response)
     print ("Sucessful to download "+fileName)
 
