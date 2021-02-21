@@ -75,10 +75,10 @@ class ActivitiesList(Resource):
                 data["activeType"] = k.active_type
                 data["description"] = k.description
                 data["image"], data["video"], data["ideaTags"], data["learnTags"] = SelectLearnIdea(k.id)
-                data["image"] = re.findall(
-                    'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', str(data["image"]))
-                data["video"] = re.findall(
-                    'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', str(data["video"]))
+                # data["image"] = re.findall(
+                #     'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', str(data["image"]))
+                # data["video"] = re.findall(
+                #     'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', str(data["video"]))
                 data["createTime"] = k.create_time
                 datas.append(data)
             paginate = Activities.query.filter(and_(*filterList)).paginate(args["page"], args["size"])
@@ -281,8 +281,10 @@ class Download(Resource):
         create_workbook(object, filePath+"Active.xlsx", idea, learn)
         # 3. 存储图片 存储视频
         if image is not None:
+            print(str(image))
             imageUrl = re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', str(image))
             if imageUrl is not None:
+                print(imageUrl)
                 for data in imageUrl:
                     getFile(filePath, data, "Image"+str(imageUrl.index(data)))
         if video is not None:
