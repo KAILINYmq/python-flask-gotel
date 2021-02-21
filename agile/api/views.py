@@ -67,3 +67,5 @@ api.add_resource(Feedback, "/feedback")
 
 # login
 api.add_resource(GetHighLightDate, "/highLightDate/list")
+api.add_resource(GetAllTotal, "/allTotal/list")
+api.add_resource(GetSplitTotal, "/splitTotal/list")

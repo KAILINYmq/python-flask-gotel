@@ -22,3 +22,5 @@ class Idea(db.Model):
     update_time = db.Column(db.DateTime)
     #
     learning_id = db.Column(db.Integer)
+    # 用户id
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))

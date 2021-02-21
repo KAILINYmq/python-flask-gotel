@@ -19,3 +19,5 @@ class Type_table(db.Model):
     creat_time = db.Column(db.DateTime)
     # 更新时间
     update_time = db.Column(db.DateTime)
+    # 用户id
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
