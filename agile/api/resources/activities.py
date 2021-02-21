@@ -9,6 +9,12 @@ import os, zipfile, re, xlsxwriter, requests
 from datetime import datetime
 import json, shutil
 
+from .idea import SaveActiveAndIdea
+from .learning import SecetLearnInfo
+from agile.commons import s3file
+
+print(s3file.DEFAULT_BUCKET.generate_presigned_url(obj_key="GOTFL/1613881867image.png"))
+
 # 返回单个数据格式
 class ActivitiesSchema(ma.ModelSchema):
     class Meta:
@@ -75,10 +81,12 @@ class ActivitiesList(Resource):
                 data["activeType"] = k.active_type
                 data["description"] = k.description
                 data["image"], data["video"], data["ideaTags"], data["learnTags"] = SelectLearnIdea(k.id)
-                # data["image"] = re.findall(
-                #     'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', str(data["image"]))
-                # data["video"] = re.findall(
-                #     'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', str(data["video"]))
+                data["image"] = re.findall(
+                    'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', str(data["image"]))
+                print(data["image"])
+                print(Bucket.generate_presigned_url("GOTFL/1613881867image.png"))
+                data["video"] = re.findall(
+                    'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', str(data["video"]))
                 data["createTime"] = k.create_time
                 datas.append(data)
             paginate = Activities.query.filter(and_(*filterList)).paginate(args["page"], args["size"])
@@ -131,32 +139,33 @@ class ActivitiesAdd(Resource):
                 active.active_object = args['activityObject']
                 active.description = args['activityDescription']
                 db.session.commit()
-                # TODO
-                # if text(active.id, args['learnings']) == 1:
-                # if text(active.id, data) == 1:
-                return ApiResponse(obj=json.dumps({"id": active.id}), status=ResposeStatus.Success, msg="OK")
-                # else:
-                #     db.session.rollback()
-                #     return ApiResponse(status=ResposeStatus.ParamFail, msg="添加失败！")
-            except Exception:
+                if SaveActiveAndIdea(active.id, data) == 1:
+                    return ApiResponse(obj=json.dumps({"id": active.id}), status=ResposeStatus.Success, msg="OK")
+                else:
+                    db.session.rollback()
+                    return ApiResponse(status=ResposeStatus.ParamFail, msg="添加失败！")
+            except Exception as e:
                 db.session.rollback()
+                print(e)
                 return ApiResponse(status=ResposeStatus.ParamFail, msg="添加失败！")
         else:
             # 新增
-            try:
+            # try:
                 activities = Activities(active=args['activityName'], active_type=args['activityTypes'],
                                         active_time=args['durationHours'], active_object=args['activityObject'],
                                         description=args['activityDescription'], is_delete = 0)
                 db.session.add(activities)
                 db.session.commit()
-                # if text(activities.id, args['learnings']) == 1:
-                return ApiResponse(obj=json.dumps({"id": activities.id}), status=ResposeStatus.Success, msg="OK")
-                # else:
-                #     db.session.rollback()
-                #     return ApiResponse(status=ResposeStatus.ParamFail, msg="添加失败！")
-            except Exception:
-                db.session.rollback()
-                return ApiResponse(status=ResposeStatus.ParamFail, msg="添加失败！")
+                if SaveActiveAndIdea(activities.id, data) == 1:
+                    return ApiResponse(obj=json.dumps({"id": activities.id}), status=ResposeStatus.Success, msg="OK")
+                else:
+                    db.session.rollback()
+                    return ApiResponse(status=ResposeStatus.ParamFail, msg="添加失败！")
+            # TODO
+            # except Exception as e:
+            #     db.session.rollback()
+            #     print(e)
+            #     return ApiResponse(status=ResposeStatus.ParamFail, msg="添加失败！")
     # def put(self):
     #     # 修改活动
     #     parser = reqparse.RequestParser()
@@ -217,7 +226,6 @@ class ActivitiesAdd(Resource):
     #     return ApiResponse(status=ResposeStatus.ParamFail, msg="参数错误！")
 
 class SingleActivities(Resource):
-    # /activities/<int:activities_id>
     def get(self, activities_id):
         # 查询单个活动数据
         object = Activities.query.filter(and_(Activities.id == activities_id, Activities.is_delete != 1)).first()
@@ -230,9 +238,7 @@ class SingleActivities(Resource):
         data["learnings"] = []
         LearnData = Learn.query.filter(and_(Learn.active_id == activities_id)).all()
         for l in LearnData:
-            learn = {}
-            # TODO
-            # text(l.id)
+            learn = SecetLearnInfo(l.id)
             data["learnings"].append(learn)
         return ApiResponse(obj=data, status=ResposeStatus.Success, msg="OK")
 
