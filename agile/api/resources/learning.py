@@ -115,6 +115,7 @@ class SortSearch(Resource):
         sortTime =data["sort"]
         page = int(data["page"])
         size = int(data["size"])
+
         if tag == 0 and brand ==0 and category ==0:
             session = db.session
             if sortTime != 1:
@@ -123,6 +124,12 @@ class SortSearch(Resource):
                 student = session.query(Learn).limit(size).offset((page-1)*size).order_by(Learn.update_time.asc()).all()
             # student = session.query(Learn).all()
             data = []
+            countTotle = session.query(func.count(distinct(Learn.id))).scalar()
+            dicts = {}
+            if countTotle % size ==0:
+                dicts["TotleNum"] = int(countTotle/size)
+            else:
+                dicts["TotleNum"] =int(countTotle/size)+1
             for value in student:
                 parasnum = session.query(func.count(distinct(Praise.id))).filter(Praise.work_id == value.id,
                                                                                  Praise.type == "learning",
@@ -169,7 +176,8 @@ class SortSearch(Resource):
                             IdeaData.append(ideaDict)
                 dict["idea"] = IdeaData
                 data.append(dict)
-            return ApiResponse(data, ResposeStatus.Success)
+            dicts["data"] = dict
+            return ApiResponse(dicts, ResposeStatus.Success)
         else:
             session = db.session
             tagnum = []
@@ -185,23 +193,12 @@ class SortSearch(Resource):
             for val in categoryList:
                 tagnum.append(val.idea_id)
 
-            # listNums = []
-            # if len(tagnum)  and len(brandnum) and len(categorynum):
-            #     listNums = intersect(tagnum,brandnum)
-            #     listNums = intersect(listNums, categorynum)
-            # elif len(tagnum)&len(categorynum):
-            #     listNums = intersect(tagnum, categorynum)
-            # elif len(categorynum) & len(brandnum):
-            #     listNums = intersect(brandnum, categorynum)
-            # elif len(tagnum) & len(brandnum):
-            #     listNums = intersect(tagnum,brandnum)
-            # elif len(tagnum):
-            #     listNums = tagnum
-            # elif len(brandnum):
-            #     listNums = brandnum
-            # elif len(categorynum):
-            #     listNums = categorynum
-
+            countTotle = session.query(func.count(distinct(Learn.id))).filter(Learn.id.in_(tagnum)).scalar()
+            dicts = {}
+            if countTotle % size ==0:
+                dicts["TotleNum"] = int(countTotle/size)
+            else:
+                dicts["TotleNum"] =int(countTotle/size)+1
             if sortTime is None:
                 result_six = session.query(Learn).filter(Learn.id.in_(tagnum))
             else:
@@ -254,7 +251,8 @@ class SortSearch(Resource):
                             IdeaData.append(ideaDict)
                 dict["Idea"] = IdeaData
                 data.append(dict)
-            return ApiResponse(data, ResposeStatus.Success)
+            dicts["data"]=dict
+            return ApiResponse(dicts, ResposeStatus.Success)
 
 # 修改
 class UpdataLearn(Resource):
@@ -449,4 +447,5 @@ def SecetLearnInfo(id):
         # activedict["image"] = active.image
         # activedict["video"] = active.video
     dict["active"] = activedict
+    session.commit()
     return dict
