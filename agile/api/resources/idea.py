@@ -94,15 +94,15 @@ class SortSearchIdea(Resource):
         brand = data["brand"]
         category = data["category"]
         sortTime = data["sort"]
+
         page = int(data["page"])
         size = int(data["size"])
         if tag == 0 and brand == 0 and category == 0:
             session = db.session
-            if sortTime is None:
+            if int(sortTime) ==0 :
                 student = session.query(Idea).limit(size).offset((page-1)*size).all()
             else:
-                student = session.query(Idea).limit(size).offset((page-1)*size).order_by(Idea.update_time.asc()).all()
-
+                student = session.query(Idea).limit(size).offset((page-1)*size).all()
             data = []
             countTotle = session.query(func.count(distinct(Idea.id))).scalar()
             dicts = {}
@@ -164,7 +164,7 @@ class SortSearchIdea(Resource):
                 dicts["TotleNum"] = int(countTotle / size)
             else:
                 dicts["TotleNum"] = int(countTotle / size) + 1
-            if sortTime is None:
+            if int(sortTime) == 0 :
                 result_six = session.query(Idea).filter(Idea.id.in_(tagnum))
             else:
                 result_six = session.query(Idea).filter(Idea.id.in_(tagnum)).order_by(Idea.update_time.asc())
@@ -261,6 +261,60 @@ class PraisesIdea(Resource):
                 learn.is_give = 1
             session.commit()
         return ApiResponse("sucess",ResposeStatus.Success)
+
+class LikeSearchIdea(Resource):
+
+    def get(self):
+        name = request.args.get("name")
+        page = request.args.get("page")
+        size = request.args.get("size")
+        session = db.session
+        names = "%%"+name+"%%"
+        nums = session.query(Idea).filter(Idea.name.like(names)).all()
+        countTotle = len(nums)
+        data = []
+        student = session.query(Idea).filter(Idea.name.like(names)).limit(int(size)).offset((int(page)-1)*int(size)).all()
+        dicts = {}
+        if countTotle % int(size) == 0:
+            dicts["TotleNum"] = int(countTotle / int(size))
+        else:
+            dicts["TotleNum"] = int(countTotle / int(size)) + 1
+        for value in student:
+            parasnum = session.query(func.count(distinct(Praise.id))).filter(Praise.work_id == value.id,
+                                                                             Praise.type == "idea",
+                                                                             Praise.is_give == 1).scalar()
+            dict = {}
+            dict["paraseNum"] = parasnum
+            dict["id"] = value.id
+            dict["name"] = value.name
+            dict["description"] = value.description
+            dict["time"] = value.update_time
+            dict["image"] = value.image
+            dict["video"] = value.video
+            labId = session.query(Idea_lab).filter(Idea_lab.idea_id == value.id).all()
+            tagName = []
+            brandName = []
+            categoryName = []
+            for id in labId:
+                # print(id,"=================")
+                labIds = session.query(Tag).filter(Tag.id == id.tag_id).all()
+                for lab in labIds:
+                    if lab.label_type == "Brand":
+                        brandName.append(lab.label)
+                    elif lab.label_type == "Category":
+                        categoryName.append(lab.label)
+                    else:
+                        tagName.append(lab.label)
+            # dict["tag"] = tagName
+            dict["barnd"] = brandName
+            dict["category"] = categoryName
+            data.append(dict)
+        dicts["data"] = data
+        session.commit()
+        return ApiResponse(dicts, ResposeStatus.Success)
+
+
+
 
 class SeachOneIdea(Resource):
     def get(self):

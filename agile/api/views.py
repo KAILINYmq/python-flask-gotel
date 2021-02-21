@@ -3,8 +3,8 @@ from flask import Blueprint, jsonify
 from flask_restplus import Api
 from agile.api.resources import *
 from agile.api.resources.global_ import Ping
-from agile.api.resources.learning import AddMyLearn, GetAllLearn, SortSearch, UpdataLearn, Praises, SeachOneLean
-from agile.api.resources.idea import AddMyIdea, GetAllIdea, SortSearchIdea, UpdataIdea, PraisesIdea, SeachOneIdea
+from agile.api.resources.learning import AddMyLearn, GetAllLearn, SortSearch, UpdataLearn, Praises, SeachOneLean,LikeSearchLearn
+from agile.api.resources.idea import AddMyIdea, GetAllIdea, SortSearchIdea, UpdataIdea, PraisesIdea, SeachOneIdea,LikeSearchIdea
 from agile.api.resources.tag import Feedback, InsertTag
 
 blueprint = Blueprint("api", __name__, url_prefix="/api/v1")
@@ -50,6 +50,9 @@ api.add_resource(UpdataLearn, "/updata")
 api.add_resource(Praises, "/praise")
 api.add_resource(Praises, "/learning/praise")
 api.add_resource(SeachOneLean, "/learning/detile")
+api.add_resource(LikeSearchLearn, "/learning/search")
+
+
 
 # idea
 api.add_resource(AddMyIdea, "/addIdea")
@@ -58,6 +61,7 @@ api.add_resource(SortSearchIdea, "/searchIdea")
 api.add_resource(UpdataIdea, "/updataIdea")
 api.add_resource(PraisesIdea, "/praiseIdea")
 api.add_resource(SeachOneIdea, "/idea/detile")
+api.add_resource(LikeSearchIdea, "/idea/search")
 
 # Tag
 api.add_resource(TagList, "/tag/list")
