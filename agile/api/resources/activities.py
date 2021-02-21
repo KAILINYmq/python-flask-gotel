@@ -1,7 +1,7 @@
-from flask import make_response, send_from_directory
+from flask import request, make_response, send_from_directory
 from flask_restplus import Resource, reqparse
 from agile.commons.api_response import ResposeStatus, ApiResponse
-from agile.models import Activities, Type_table, Details_table
+from agile.models import Activities, Type_table, Details_table, Learn, Idea
 from agile.extensions import ma, db
 from agile import PROJECT_ROOT
 from sqlalchemy import and_
@@ -54,7 +54,6 @@ class ActivitiesList(Resource):
         # 2. 查询参数
         filterList = []
         filterList.append(Activities.is_delete != 1)
-        filterList.append(Activities.status == 0)
         try:
             if args["name"] is not None:
                 filterList.append(Activities.active == args["name"])
@@ -75,11 +74,11 @@ class ActivitiesList(Resource):
                 data["activeName"] = k.active
                 data["activeType"] = k.active_type
                 data["description"] = k.description
-                # TODO
-                data["image"] = k.image
-                data["video"] = k.video
-                data["ideaTags"] = k.idea_name
-                data["learnTags"] = k.learn_name
+                data["image"], data["video"], data["ideaTags"], data["learnTags"] = SelectLearnIdea(k.id)
+                data["image"] = re.findall(
+                    'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', str(data["image"]))
+                data["video"] = re.findall(
+                    'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', str(data["video"]))
                 data["createTime"] = k.create_time
                 datas.append(data)
             paginate = Activities.query.filter(and_(*filterList)).paginate(args["page"], args["size"])
@@ -87,12 +86,31 @@ class ActivitiesList(Resource):
                                status=ResposeStatus.Success, msg="OK")
         except Exception as e:
             print(e)
-            print(11111)
             return ApiResponse(status=ResposeStatus.ParamFail, msg="参数错误!")
+
+def SelectLearnIdea(id):
+    Image = []
+    Video = []
+    IdeaTag = []
+    LearnTags = []
+    LearnData = Learn.query.filter(and_(Learn.active_id == id)).all()
+    for l in LearnData:
+        IdeaData = Idea.query.filter(and_(Idea.learning_id == l.id)).all()
+        for i in IdeaData:
+            IdeaTag.append(i.name)
+            Image.append(i.image)
+            Video.append(i.video)
+        Image.append(l.image)
+        Video.append(l.video)
+        LearnTags.append(l.name)
+    return set(filter(None, Image)), set(filter(None, Video)), set(filter(None, IdeaTag)), set(filter(None, LearnTags))
+
+
 
 class ActivitiesAdd(Resource):
     def post(self):
         # 新增活动
+        data = json.loads(request.get_data(as_text=True))
         parser = reqparse.RequestParser()
         parser.add_argument('activityName', required=True, help="activityName cannot be blank!")
         parser.add_argument('activityTypes', required=True, help="activityTypes cannot be blank!")
@@ -113,7 +131,9 @@ class ActivitiesAdd(Resource):
                 active.active_object = args['activityObject']
                 active.description = args['activityDescription']
                 db.session.commit()
+                # TODO
                 # if text(active.id, args['learnings']) == 1:
+                # if text(active.id, data) == 1:
                 return ApiResponse(obj=json.dumps({"id": active.id}), status=ResposeStatus.Success, msg="OK")
                 # else:
                 #     db.session.rollback()
@@ -196,13 +216,10 @@ class ActivitiesAdd(Resource):
     #             return ApiResponse(status=ResposeStatus.ParamFail, msg="添加失败！")
     #     return ApiResponse(status=ResposeStatus.ParamFail, msg="参数错误！")
 
-
 class SingleActivities(Resource):
     # /activities/<int:activities_id>
     def get(self, activities_id):
         # 查询单个活动数据
-        # schema = ActivitiesSchema()
-        # object = schema.dump(Activities.query.filter(and_(Activities.id == activities_id, Activities.is_delete != 1)).first())
         object = Activities.query.filter(and_(Activities.id == activities_id, Activities.is_delete != 1)).first()
         data = {}
         data["name"] = object.active
@@ -210,10 +227,13 @@ class SingleActivities(Resource):
         data["activeTime"] = object.active_time
         data["activeObject"] = object.active_object
         data["description"] = object.description
-        data["ideaName"] = object.idea_name
-        data["learnName"] = object.learn_name
-        data["video"] = object.video
-        data["image"] = object.image
+        data["learnings"] = []
+        LearnData = Learn.query.filter(and_(Learn.active_id == activities_id)).all()
+        for l in LearnData:
+            learn = {}
+            # TODO
+            # text(l.id)
+            data["learnings"].append(learn)
         return ApiResponse(obj=data, status=ResposeStatus.Success, msg="OK")
 
     def delete(self, activities_id):
@@ -257,15 +277,16 @@ class Download(Resource):
         os.makedirs(filePath)
         #  2.存储excel
         object = Activities.query.filter(and_(Activities.id == activities_id, Activities.is_delete != 1)).first()
-        create_workbook(object, filePath+"Active.xlsx")
+        image, video, idea, learn = SelectLearnIdea(object.id)
+        create_workbook(object, filePath+"Active.xlsx", idea, learn)
         # 3. 存储图片 存储视频
-        if object.image is not None:
-            imageUrl = re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', str(object.image))
+        if image is not None:
+            imageUrl = re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', str(image))
             if imageUrl is not None:
                 for data in imageUrl:
                     getFile(filePath, data, "Image"+str(imageUrl.index(data)))
-        if object.video is not None:
-            videoUrl = re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', str(object.video))
+        if video is not None:
+            videoUrl = re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', str(video))
             if videoUrl is not None:
                 for data in videoUrl:
                     getFile(filePath, data, "Video" + str(videoUrl.index(data)))
@@ -276,7 +297,7 @@ class Download(Resource):
             send_from_directory(fileDownloadPath, str(activities_id)+".zip", as_attachment=True))
         return response
 
-def create_workbook(object, filePath):
+def create_workbook(object, filePath, idea, learn):
     # 创建Excel文件,不保存,直接输出
     workbook = xlsxwriter.Workbook(filePath)
     worksheet = workbook.add_worksheet("sheet")
@@ -288,10 +309,8 @@ def create_workbook(object, filePath):
                                # TODO 解析object
                                str(object.active_object),
                                str(object.description),
-                               # TODO 解析Learn
-                               str(object.learn_name),
-                               #  TODO 解析Idea
-                               str(object.idea_name)
+                               str(idea),
+                               str(learn)
                                ])
     workbook.close()
 
