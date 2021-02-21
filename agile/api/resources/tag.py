@@ -138,6 +138,7 @@ class Feedback(Resource):
             status = request.args.get("status")
             startTime = request.args.get("startTime")
             endTime = request.args.get("endTime")
+            userId = request.args.get("userId")
             if status is None:
                 status = "3"
 
@@ -151,17 +152,21 @@ class Feedback(Resource):
             timeList = timeConvert(startTime, endTime)
             result = {}
             feedbackData = []
-            if status == "0":
-                data = db.session.query(Guestbook).filter_by(state="0").filter(
-                    Guestbook.time.between(timeList[0], timeList[1])).all()
-            elif status == "1":
-                data = db.session.query(Guestbook).filter_by(state="1").filter(
-                    Guestbook.time.between(timeList[0], timeList[1])).all()
-            elif status == "2":
-                data = db.session.query(Guestbook).filter_by(state="2").filter(
-                    Guestbook.time.between(timeList[0], timeList[1])).all()
-            elif status == "3":
-                data = db.session.query(Guestbook).filter(Guestbook.time.between(timeList[0], timeList[1])).all()
+
+            if userId is None:
+                if status == "3":
+                    data = db.session.query(Guestbook).filter(Guestbook.time.between(timeList[0], timeList[1])).all()
+                else:
+                    data = db.session.query(Guestbook).filter_by(state=status).filter(
+                        Guestbook.time.between(timeList[0], timeList[1])).all()
+            else:
+                if status == "3":
+                    data = db.session.query(Guestbook).filter(
+                        Guestbook.time.between(timeList[0], timeList[1])).filter_by(user_id=userId).all()
+                else:
+                    data = db.session.query(Guestbook).filter_by(state=status).filter(
+                        Guestbook.time.between(timeList[0], timeList[1])).filter_by(user_id=userId).all()
+
             for i in data:
                 temp = {"id": i.id, "type": i.type, "description": i.description, "time": i.time, "state": i.state,
                         "userId": i.user_id}
@@ -190,6 +195,30 @@ class Feedback(Resource):
         except RuntimeError:
             return ApiResponse("Search failed! Please try again.", ResposeStatus.Fail)
 
+    def post(self):
+        """
+        用户提交反馈信息到guestbook表
+        """
+        try:
+            data = json.loads(request.get_data(as_text=True))
+            type = data["type"]
+            description = data["description"]
+            userId = data["userId"]
+
+            guestbookTab = Guestbook()
+            guestbookTab.type = type
+            guestbookTab.description = description
+            guestbookTab.user_id = userId
+
+            guestbookTab.state = "0"
+            guestbookTab.time = time.strftime("%Y-%m-%d", time.localtime())
+
+            db.session.add(guestbookTab)
+            db.session.commit()
+            return ApiResponse("Already submit feedbook." , ResposeStatus.Success)
+        except RuntimeError:
+            return ApiResponse("Search failed! Please try again.", ResposeStatus.Fail)
+        pass
 
 def timeConvert(startTime, endTime):
     """转换时间"""
