@@ -18,17 +18,7 @@ class Activities(db.Model):
     active_object = db.Column(db.String(164))
     # 描述
     description = db.Column(db.String(164))
-    # 图片
-    image = db.Column(db.String(1024))
-    # 视频
-    video = db.Column(db.String(1024))
 
-    # 创意
-    idea_name = db.Column(db.String(164))
-    # 学习
-    learn_name = db.Column(db.String(164))
-    # learn_id
-    learn_id = db.Column(db.String(164))
 
     # 创建时间
     create_time = db.Column(db.DateTime, default=datetime.datetime.now)
@@ -36,5 +26,3 @@ class Activities(db.Model):
     update_time = db.Column(db.DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
     # is_del
     is_delete = db.Column(db.Integer, default=0)
-    # 状态
-    status = db.Column(db.Integer, default=0)
