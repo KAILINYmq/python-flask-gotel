@@ -1,3 +1,4 @@
+import time
 from datetime import datetime
 
 from flask import request
@@ -64,37 +65,28 @@ class GetAllTotal(Resource):
 class GetSplitTotal(Resource):
     """
     获取过去12个月用户上传的数量，获取过去6周用户上传的数量  HTTP方法：GET
-    type: 0——Month，1——Week
-
+    type:learn  or  idea
+    date: 0——Month，1——Week
+    userId: 用户id
     """
 
     def get(self):
 
+        result = {}
         type = request.args.get("type")
+        userId = request.args.get("userId")
 
         if type == "0":
-            # TODO 查月份，但是还不太清楚具体需求
+            # 查本年12个月的数据
+            data = db.session.query(Learn).filter_by(user_id=userId).count()
             pass
         elif type == "1":
             # 查过去六周的数据
+            # endTime = time.strftime("%Y-%m-%d", time.localtime())
+            # endTime = datetime.strptime(endTime, "%Y-%m-%d")
+            # startTime = datetime.strptime(str(startTime), "%Y-%m-%d %H:%M:%S")
+            # startTime = datetime(year=startTime.year, month=startTime.month, day=startTime.day)
             pass
 
-        # 1. 获取数据
-        date = request.args.get("date").split("-")
-        # 存取endTime对12进行特殊处理
-        if date[1] == "12":
-            end = datetime(year=int(date[0]) + 1, month=1, day=1)
-        else:
-            end = datetime(year=int(date[0]), month=int(date[1]) + 1, day=1)
-
-        start = datetime(year=int(date[0]), month=int(date[1]), day=1)
-        # 查询在本月有多少条数据
-        data = db.session.query(Activities).filter(Activities.create_time >= start, Activities.create_time < end).all()
-        setDay = set()
-
-        for i in data:
-            # 从日期中分割出月份并转成int存到set中去重
-            setDay.add(int(str(i.create_time).split("-")[2][0:2]))
-
-        return ApiResponse(setDay, ResposeStatus.Success)
+        return ApiResponse(result, ResposeStatus.Success)
 
