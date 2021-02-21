@@ -215,9 +215,8 @@ class UserList(Resource):
             return ApiResponse(None, ResposeStatus.ParamFail, "Email already in use")
         if user.is_adal is None:
             user.is_adal = user.email.lower().endswith('@unilever.com')
+        user.is_delete = 0
         db.session.add(user)
-        # TODO
-        print(user.role_id)
         db.session.commit()
 
         return ApiResponse(schema.dump(user), ResposeStatus.Success)
