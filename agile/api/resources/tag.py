@@ -15,49 +15,61 @@ class TagList(Resource):
     def get(self):
         try:
             type = request.args.get("type")
-            if type == "ActivityType":
+            if type == "0":
                 allName = db.session.query(Type_table).all()
-                return ApiResponse([name.name for name in allName], ResposeStatus.Success)
-            elif type == "ActivityDetails":
+                return ApiResponse([{"tag": name.name, "new": getNewState(name.creat_time)} for name in allName],
+                                   ResposeStatus.Success)
+            elif type == "1":
                 allName = db.session.query(Details_table).all()
-                return ApiResponse([name.name for name in allName], ResposeStatus.Success)
-            elif type == "LearningsTags":
+                return ApiResponse([{"tag": name.name, "new": getNewState(name.creat_time)} for name in allName],
+                                   ResposeStatus.Success)
+            elif type == "2":
                 allName = db.session.query(Tag).filter_by(label_type=type).all()
-                return ApiResponse([name.label for name in allName], ResposeStatus.Success)
-            elif type == "IdeaTags":
+                return ApiResponse([{"tag": name.label, "new": getNewState(name.create_time)} for name in allName],
+                                   ResposeStatus.Success)
+            elif type == "3":
                 allName = db.session.query(Tag).filter_by(label_type=type).all()
-                return ApiResponse([name.label for name in allName], ResposeStatus.Success)
-            elif type == "Brand":
+                return ApiResponse([{"tag": name.label, "new": getNewState(name.create_time)} for name in allName],
+                                   ResposeStatus.Success)
+            elif type == "4":
                 allName = db.session.query(Tag).filter_by(label_type=type).all()
-                return ApiResponse([name.label for name in allName], ResposeStatus.Success)
-            elif type == "Category":
+                return ApiResponse([{"tag": name.label, "new": getNewState(name.create_time)} for name in allName],
+                                   ResposeStatus.Success)
+            elif type == "5":
                 allName = db.session.query(Tag).filter_by(label_type=type).all()
-                return ApiResponse([name.label for name in allName], ResposeStatus.Success)
+                return ApiResponse([{"tag": name.label, "new": getNewState(name.create_time)} for name in allName],
+                                   ResposeStatus.Success)
 
         except RuntimeError:
             return ApiResponse("Search failed! Please try again.", ResposeStatus.Fail)
 
 
 class AllTagList(Resource):
-    """Get all ActivityType"""
+    """
+    Get all ActivityType
+    new: 1 —— 新 , 0 —— 旧
+    """
 
     def get(self):
         try:
             result = {}
             allName = db.session.query(Type_table).all()
-            result["activityType"] = [name.name for name in allName]
+            result["activityType"] = [{"tag": name.name, "new": getNewState(name.creat_time)} for name in allName]
 
             allName = db.session.query(Details_table).all()
-            result["activityDetails"] = [name.name for name in allName]
+            result["activityDetails"] = [{"tag": name.name, "new": getNewState(name.creat_time)} for name in allName]
 
-            allName = db.session.query(Tag).all()
-            result["tag"] = [name.label for name in allName]
-            # 返回详细列表
-            # allName = db.session.query(Tag).filter_by(label_type=type).all()
-            # result["tag"] = [name.label for name in allName]
-            # allName = db.session.query(Tag).filter_by(label_type=type).all()
-            # allName = db.session.query(Tag).filter_by(label_type=type).all()
-            # allName = db.session.query(Tag).filter_by(label_type=type).all()
+            allName = db.session.query(Tag).filter_by(label_type="LearningsTags").all()
+            result["learningsTags"] = [{"tag": name.label, "new": getNewState(name.create_time)} for name in allName]
+
+            allName = db.session.query(Tag).filter_by(label_type="IdeaTags").all()
+            result["ideaTags"] = [{"tag": name.label, "new": getNewState(name.create_time)} for name in allName]
+
+            allName = db.session.query(Tag).filter_by(label_type="Brand").all()
+            result["brand"] = [{"tag": name.label, "new": getNewState(name.create_time)} for name in allName]
+
+            allName = db.session.query(Tag).filter_by(label_type="Category").all()
+            result["category"] = [{"tag": name.label, "new": getNewState(name.create_time)} for name in allName]
 
             return ApiResponse(result, ResposeStatus.Success)
         except RuntimeError:
@@ -115,36 +127,48 @@ class InsertTag(Resource):
 class Feedback(Resource):
     """
     通过判断status返回反馈信息
-    status: 0: get all， 1: get 通过， 2: get 未通过， 3: get 未审批
+    status: 0: 通过， 1: get 未通过， 2: get 未审批， 3: get all
     startTime:Year-month-day
     endTime:Year-month-day
     """
 
     def get(self):
         try:
+            # 1. 获取参数，参数init
             status = request.args.get("status")
-            time = timeConvert(request.args.get("startTime"), request.args.get("endTime"))
-            result = []
+            startTime = request.args.get("startTime")
+            endTime = request.args.get("endTime")
+            if status is None:
+                status = "3"
+
+            if startTime is None:
+                startTime = "2020-1-1"
+
+            if endTime is None:
+                endTime = time.strftime("%Y-%m-%d", time.localtime())
+
+            # 2. 通过参数来查询数据并返回
+            timeList = timeConvert(startTime, endTime)
+            result = {}
+            feedbackData = []
             if status == "0":
-                data = db.session.query(Guestbook).filter(Guestbook.time.between(time[0], time[1])).all()
+                data = db.session.query(Guestbook).filter_by(state="0").filter(
+                    Guestbook.time.between(timeList[0], timeList[1])).all()
             elif status == "1":
-                data = db.session.query(Guestbook).filter_by(state="passed").filter(
-                    Guestbook.time.between(time[0], time[1])).all()
+                data = db.session.query(Guestbook).filter_by(state="1").filter(
+                    Guestbook.time.between(timeList[0], timeList[1])).all()
             elif status == "2":
-                data = db.session.query(Guestbook).filter_by(state="rejected").filter(
-                    Guestbook.time.between(time[0], time[1])).all()
+                data = db.session.query(Guestbook).filter_by(state="2").filter(
+                    Guestbook.time.between(timeList[0], timeList[1])).all()
             elif status == "3":
-                data = db.session.query(Guestbook).filter_by(state="not reviewed").filter(
-                    Guestbook.time.between(time[0], time[1])).all()
+                data = db.session.query(Guestbook).filter(Guestbook.time.between(timeList[0], timeList[1])).all()
             for i in data:
-                temp = {}
-                temp["id"] = i.id
-                temp["type"] = i.type
-                temp["description"] = i.description
-                temp["time"] = i.time
-                temp["state"] = i.state
-                temp["userId"] = i.user_id
-                result.append(temp)
+                temp = {"id": i.id, "type": i.type, "description": i.description, "time": i.time, "state": i.state,
+                        "userId": i.user_id}
+                feedbackData.append(temp)
+
+            result["feedbackData"] = feedbackData
+            result["total"] = len(data)
             return ApiResponse(result, ResposeStatus.Success)
         except RuntimeError:
             return ApiResponse("Search failed! Please try again.", ResposeStatus.Fail)
@@ -153,11 +177,11 @@ class Feedback(Resource):
         """
         update user feedback status
         id: The user id status will be update,
-        status: 0: pass, 1: rejected
+        status: 0: 未审批, 1: 通过, 2: 拒绝
         """
         try:
             id = request.args.get("id")
-            status = "passed" if request.args.get("status") == "0" else "rejected"
+            status = request.args.get("status")
             session = db.session
             data = session.query(Guestbook).filter_by(id=id).first_or_404()
             data.state = status
@@ -175,3 +199,19 @@ def timeConvert(startTime, endTime):
     end = datetime(year=int(endTime[0]), month=int(endTime[1]), day=int(endTime[2]))
     result = [start, end]
     return result
+
+
+def getNewState(startTime):
+    """传进来标签时间，返回1或0，为标签状态"""
+    if startTime is None:
+        return "0"
+
+    endTime = time.strftime("%Y-%m-%d", time.localtime())
+    endTime = datetime.strptime(endTime, "%Y-%m-%d")
+    startTime = datetime.strptime(str(startTime), "%Y-%m-%d %H:%M:%S")
+    startTime = datetime(year=startTime.year, month=startTime.month, day=startTime.day)
+
+    if (startTime.__rsub__(endTime)).days >= 7:
+        return "0"
+
+    return "1"

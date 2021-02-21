@@ -32,6 +32,8 @@ __all__ = [
     "SingleActivities",
     "activities",
     "ActivitiesAdd",
+    # login
+    "GetHighLightDate",
     "Activity",
     "Download",
     # login
