@@ -52,8 +52,11 @@ class FileList(Resource):
         if file and allowed_file(file.filename) and file.content_length <= MAX_CONTENT_LENGTH:
             # 在文件名中加入时间戳防止覆盖
             file_name = "GOTFL/" + str(int(time.time())) + secure_filename(file.filename)
-            s3file.DEFAULT_BUCKET.write(file_name, file.read())
-            return ApiResponse(s3file.DEFAULT_BUCKET.generate_presigned_url(file_name))
+            try:
+                s3file.DEFAULT_BUCKET.write(file_name, file.read())
+            except Exception as err:
+                return ApiResponse(None, ResposeStatus.Fail, err)
+            return ApiResponse(file_name)
         else:
             return ApiResponse(None, ResposeStatus.Fail, "只能上传 5 MB 以内的图片或视频")
 

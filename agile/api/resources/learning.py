@@ -6,7 +6,7 @@ from flask_jwt_extended import current_user
 from flask_jwt_extended import jwt_required
 import json
 import time
-from agile.models import Learn,Learn_lab, Learn_name,Learn_type,Tag,Praise,Idea,Activities
+from agile.models import Learn,Learn_lab, Learn_type,Tag,Praise,Idea,Activities
 from sqlalchemy import func
 from sqlalchemy import distinct
 
@@ -41,7 +41,6 @@ class AddMyLearn(Resource):
         for value in  data["category"]:
             new_learn_lable = Learn_lab(idea_id=learning.id,tag_id=value,creat_time=now, update_time =now , is_delete =0)
             session.add(new_learn_lable)
-
         session.commit()
         return ApiResponse({"id":learning.id}, ResposeStatus.Success,"OK")
 
@@ -321,64 +320,63 @@ class SeachOneLean(Resource):
 
     def get(self):
             id = request.args.get("id")
-            session = db.session
-            value = session.query(Learn).filter(Learn.id == id).first()
-
-            parasnum = session.query(func.count(distinct(Praise.id))).filter(Praise.work_id == value.id,
-                                                                             Praise.type == "learning",Praise.is_give == 1).scalar()
-            dict ={}
-            dict["id"]=value.id
-            dict["name"]=value.name
-            dict["description"]=value.description
-            dict["paraseNum"] = parasnum
-            dict["time"] = value.update_time
-            dict["image"] = value.image
-            dict["video"] = value.video
-            labId = session.query(Learn_lab).filter(Learn_lab.idea_id == value.id).all()
-            tagName = []
-            brandName = []
-            categoryName = []
-            for id in labId:
-                # print(id,"=================")
-                labIds = session.query(Tag).filter(Tag.id == id.tag_id).all()
-                for lab in labIds:
-                    if lab.label_type == "Brand":
-                        brandName.append(lab.label)
-                    elif lab.label_type == "Category":
-                        categoryName.append(lab.label)
-                    else:
-                        tagName.append(lab.label)
-            # dict["tag"] = tagName
-            dict["barnd"] = brandName
-            dict["category"] = categoryName
-            # print(type(dict["ideaId"]),type(value.idea_id),"==================")
-            IdeaData = []
-            if value.idea_id is not None:
-                idealist = json.loads(value.idea_id)
-                for val in idealist:
-                    ideaDict = {}
-                    idea = session.query(Idea).filter(Idea.id == val).first()
-                    if idea is not None:
-                        ideaDict["id"] = idea.id
-                        ideaDict["name"] = idea.name
-                        ideaDict["description"] = idea.description
-                        ideaDict["time"] = idea.update_time
-                        ideaDict["image"] = idea.image
-                        ideaDict["video"] = idea.video
-                        IdeaData.append(ideaDict)
-            dict["idea"] = IdeaData
-            print(value.active_id)
-            activedict = {}
-            if value.active_id is not None:
-                active = session.query(Activities).filter(Activities.id == value.active_id).first()
-                activedict["name"] = active.active
-                activedict["activeType"] = active.active_type
-                activedict["activeTime"] = active.active_time
-                activedict["description"] = active.description
-                activedict["image"] = active.image
-                activedict["video"] = active.video
-                print(activedict)
-            dict["active"] = activedict
+            dict = SecetLearnInfo(id)
+            # session = db.session
+            # value = session.query(Learn).filter(Learn.id == id).first()
+            #
+            # parasnum = session.query(func.count(distinct(Praise.id))).filter(Praise.work_id == value.id,
+            #                                                                  Praise.type == "learning",Praise.is_give == 1).scalar()
+            # dict ={}
+            # dict["id"]=value.id
+            # dict["name"]=value.name
+            # dict["description"]=value.description
+            # dict["paraseNum"] = parasnum
+            # dict["time"] = value.update_time
+            # dict["image"] = value.image
+            # dict["video"] = value.video
+            # labId = session.query(Learn_lab).filter(Learn_lab.idea_id == value.id).all()
+            # tagName = []
+            # brandName = []
+            # categoryName = []
+            # for id in labId:
+            #     # print(id,"=================")
+            #     labIds = session.query(Tag).filter(Tag.id == id.tag_id).all()
+            #     for lab in labIds:
+            #         if lab.label_type == "Brand":
+            #             brandName.append(lab.label)
+            #         elif lab.label_type == "Category":
+            #             categoryName.append(lab.label)
+            #         else:
+            #             tagName.append(lab.label)
+            # # dict["tag"] = tagName
+            # dict["barnd"] = brandName
+            # dict["category"] = categoryName
+            # # print(type(dict["ideaId"]),type(value.idea_id),"==================")
+            # IdeaData = []
+            # if value.idea_id is not None:
+            #     idealist = json.loads(value.idea_id)
+            #     for val in idealist:
+            #         ideaDict = {}
+            #         idea = session.query(Idea).filter(Idea.id == val).first()
+            #         if idea is not None:
+            #             ideaDict["id"] = idea.id
+            #             ideaDict["name"] = idea.name
+            #             ideaDict["description"] = idea.description
+            #             ideaDict["time"] = idea.update_time
+            #             ideaDict["image"] = idea.image
+            #             ideaDict["video"] = idea.video
+            #             IdeaData.append(ideaDict)
+            # dict["idea"] = IdeaData
+            # activedict = {}
+            # if value.active_id is not None:
+            #     active = session.query(Activities).filter(Activities.id == value.active_id).first()
+            #     activedict["name"] = active.active
+            #     activedict["activeType"] = active.active_type
+            #     activedict["activeTime"] = active.active_time
+            #     activedict["description"] = active.description
+            #     # activedict["image"] = active.image
+            #     # activedict["video"] = active.video
+            # dict["active"] = activedict
             # active = session.query(Activities).all()
             # dictactive = {}
             # for val in active:
@@ -391,3 +389,64 @@ def intersect(nums1, nums2):
   import collections
   a, b = map(collections.Counter, (nums1, nums2))
   return list((a & b).elements())
+
+
+def SecetLearnInfo(id):
+    session = db.session
+    value = session.query(Learn).filter(Learn.id == id).first()
+
+    parasnum = session.query(func.count(distinct(Praise.id))).filter(Praise.work_id == value.id,
+                                                                     Praise.type == "learning",
+                                                                     Praise.is_give == 1).scalar()
+    dict = {}
+    dict["id"] = value.id
+    dict["name"] = value.name
+    dict["description"] = value.description
+    dict["paraseNum"] = parasnum
+    dict["time"] = value.update_time
+    dict["image"] = value.image
+    dict["video"] = value.video
+    labId = session.query(Learn_lab).filter(Learn_lab.idea_id == value.id).all()
+    tagName = []
+    brandName = []
+    categoryName = []
+    for id in labId:
+        # print(id,"=================")
+        labIds = session.query(Tag).filter(Tag.id == id.tag_id).all()
+        for lab in labIds:
+            if lab.label_type == "Brand":
+                brandName.append(lab.label)
+            elif lab.label_type == "Category":
+                categoryName.append(lab.label)
+            else:
+                tagName.append(lab.label)
+    # dict["tag"] = tagName
+    dict["barnd"] = brandName
+    dict["category"] = categoryName
+    # print(type(dict["ideaId"]),type(value.idea_id),"==================")
+    IdeaData = []
+    if value.idea_id is not None:
+        idealist = json.loads(value.idea_id)
+        for val in idealist:
+            ideaDict = {}
+            idea = session.query(Idea).filter(Idea.id == val).first()
+            if idea is not None:
+                ideaDict["id"] = idea.id
+                ideaDict["name"] = idea.name
+                ideaDict["description"] = idea.description
+                ideaDict["time"] = idea.update_time
+                ideaDict["image"] = idea.image
+                ideaDict["video"] = idea.video
+                IdeaData.append(ideaDict)
+    dict["idea"] = IdeaData
+    activedict = {}
+    if value.active_id is not None:
+        active = session.query(Activities).filter(Activities.id == value.active_id).first()
+        activedict["name"] = active.active
+        activedict["activeType"] = active.active_type
+        activedict["activeTime"] = active.active_time
+        activedict["description"] = active.description
+        # activedict["image"] = active.image
+        # activedict["video"] = active.video
+    dict["active"] = activedict
+    return dict

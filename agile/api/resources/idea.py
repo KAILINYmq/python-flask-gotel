@@ -6,7 +6,7 @@ from flask_restplus import Resource
 from flask_jwt_extended import current_user
 from agile.commons.api_response import ResposeStatus, ApiResponse
 from agile.extensions import db
-from agile.models import Idea, Idea_lab ,Tag,Praise,Learn,Activities
+from agile.models import Idea, Idea_lab ,Tag,Praise,Learn,Activities,Learn_lab
 from flask_jwt_extended import jwt_required
 
 from sqlalchemy import func
@@ -265,6 +265,7 @@ class PraisesIdea(Resource):
 
 class SeachOneIdea(Resource):
     def get(self):
+        # SaveActiveAndIdea(2,"1")
         id = request.args.get("id")
         session = db.session
         value = session.query(Idea).filter(Idea.id == id).first()
@@ -305,48 +306,130 @@ class SeachOneIdea(Resource):
         learndict["video"] = learn.video
         learndict["time"] = learn.update_time
         dict["learning"] = learndict
+        print(learn.active_id,"ddadw!111111111111")
         active = session.query(Activities).filter(Activities.id == learn.active_id).first()
         activedict = {}
         activedict["name"] = active.active
         activedict["activeType"] = active.active_type
         activedict["activeTime"] = active.active_time
         activedict["description"] = active.description
-        activedict["image"] = active.image
-        activedict["video"] = active.video
+        # activedict["image"] = active.image
+        # activedict["video"] = active.video
         dict["active"] = activedict
         return ApiResponse(dict, ResposeStatus.Success)
 
 
-def SaveActiveAndIdea(data):
+def SaveActiveAndIdea(activeIds,datas):
+
+        # shuju = '''{
+	    #     "learnings": [{
+		#     "name": "你dawd34向ddeqewewewewewe我",
+		#     "description": "分割开始，走电工的阿萨",
+		#     "tags": [1,2],
+		#     "brands": [1,2],
+		#     "category": [1,2],
+        #     "imageUrls": ["dddd","dddddawd"],
+        #     "videoUrls": ["wdawdad","Dawdawdad"],
+        #     "ideas": [{
+        #             "name": "344wweqewedddeqwewd我",
+        #             "description": "你说队列",
+        #             "tags": [1,2],
+        #             "brands": [1,2],
+        #             "category": [1,2],
+        #             "imageUrls": ["安徽嗲文化","dawdawd"],
+        #             "videoUrls": ["dawdadad","dawdad"]
+        #         },
+        #         {
+		# 		"name": "非deqwdddewweqeqeeaeeqw想你",
+		# 		"description": "zouzai1dhawdj1",
+		# 		"tags": [1,2],
+		# 		"brands": [1,2],
+		# 		"category": [1,2],
+		# 		"imageUrls": ["whdauwdj","dawdjawdil"],
+		# 		"videoUrls": ["dawidjawdi","dadawd"]
+		# 	        }
+		#         ]
+	    #         }]
+        #         }'''
+
+        # aa =json.loads(shuju)
+        #
+        # datas = aa
+        for lern in datas["learnings"]:
+            idealist = []
+            now = time.strftime('%Y-%m-%d', time.localtime(time.time()))
+            # data = json.loads(request.get_data(as_text=True))
+            session = db.session
+            # student = session.query(Learn).filter(Learn.name == lern["name"]).first()
+            # if student:
+            #     return ApiResponse("", ResposeStatus.Fail, "该名字已经存在")
+            # user =Learn.session.filter(func.lower(User.email) == func.lower(email))
+            print(lern["imageUrls"],)
+            new_user = Learn(name=lern["name"], description=lern["description"],active_id = activeIds,
+                             image=str(lern["imageUrls"]),video=str(lern["videoUrls"]),creat_time=now, update_time=now)
+            session.add(new_user)
+            session.commit()
+            # for id in data["ideaIdList"]:
+            #     ideadata = session.query(Idea).filter(Idea.id == id).first()
+            #     ideadata.learning_id = new_user.id
+            # session.commit()
+
+            tag = lern["tags"]
+            learning = session.query(Learn).filter(Learn.name == lern["name"]).first()
+            now = time.strftime('%Y-%m-%d', time.localtime(time.time()))
+            for value in tag:
+                new_learn_lable = Learn_lab(idea_id=learning.id, tag_id=value, creat_time=now, update_time=now,
+                                            is_delete=0)
+                session.add(new_learn_lable)
+
+            for value in lern["brands"]:
+                new_learn_lable = Learn_lab(idea_id=learning.id, tag_id=value, creat_time=now, update_time=now,
+                                            is_delete=0)
+                session.add(new_learn_lable)
+
+            for value in lern["category"]:
+                new_learn_lable = Learn_lab(idea_id=learning.id, tag_id=value, creat_time=now, update_time=now,
+                                            is_delete=0)
+                session.add(new_learn_lable)
+            session.commit()
+            for idea in lern["ideas"]:
+                # now = time.strftime('%Y-%m-%d', time.localtime(time.time()))
+                # data = json.loads(request.get_data(as_text=True))
+                session = db.session
+                # student = session.query(Idea).filter(Idea.name == idea["name"]).first()
+                # if student:
+                #     return ApiResponse("", ResposeStatus.Fail, "该名字已经存在")
+                new_users = Idea(name=idea["name"], description=idea["description"],image=str(idea["imageUrls"]),video=str(idea["videoUrls"]),learning_id=new_user.id,creat_time=now, update_time=now)
+                session.add(new_users)
+                session.commit()
+                tag = idea["tags"]
+                learning = session.query(Idea).filter(Idea.id == new_users.id).first()
+                now = time.strftime('%Y-%m-%d', time.localtime(time.time()))
+                for value in tag:
+                    new_learn_lable = Idea_lab(idea_id=learning.id, tag_id=value, creat_time=now, update_time=now,
+                                               is_delete=0)
+                    session.add(new_learn_lable)
+
+                for value in idea["brands"]:
+                    new_learn_lable = Idea_lab(idea_id=learning.id, tag_id=value, creat_time=now, update_time=now,
+                                               is_delete=0)
+                    session.add(new_learn_lable)
+
+                for value in idea["category"]:
+                    new_learn_lable = Idea_lab(idea_id=learning.id, tag_id=value, creat_time=now, update_time=now,
+                                               is_delete=0)
+                    session.add(new_learn_lable)
+                idealist.append(new_users.id)
+                session.commit()
+            learninfo = session.query(Learn).filter(Learn.id == new_user.id).first()
+            learninfo.idea_id = idealist
+            session.commit()
+
+        return 1
 
 
-    now = time.strftime('%Y-%m-%d', time.localtime(time.time()))
-    data = json.loads(request.get_data(as_text=True))
-    session = db.session
-    student = session.query(Idea).filter(Idea.name == data["name"]).first()
-    if student:
-        return ApiResponse("", ResposeStatus.Fail, "该名字已经存在")
-    new_user = Idea(name=data["name"], description=data["description"], creat_time=now, update_time=now)
-    session.add(new_user)
-    session.commit()
-    tag = data["tag"]
-    learning = session.query(Idea).filter(Idea.name == data["name"]).first()
-    now = time.strftime('%Y-%m-%d', time.localtime(time.time()))
-    for value in tag:
-        new_learn_lable = Idea_lab(idea_id=learning.id, tag_id=value, creat_time=now, update_time=now, is_delete=0)
-        session.add(new_learn_lable)
 
-    for value in data["brand"]:
-        new_learn_lable = Idea_lab(idea_id=learning.id, tag_id=value, creat_time=now, update_time=now,
-                                   is_delete=0)
-        session.add(new_learn_lable)
 
-    for value in data["category"]:
-        new_learn_lable = Idea_lab(idea_id=learning.id, tag_id=value, creat_time=now, update_time=now,
-                                   is_delete=0)
-        session.add(new_learn_lable)
-
-    session.commit()
 
 
 

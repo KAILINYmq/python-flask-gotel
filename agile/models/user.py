@@ -16,12 +16,10 @@ class User(AuditModel):
     id = db.Column(db.Integer, primary_key=True)
     number=db.Column(db.Integer)
     username = db.Column(db.String(32), unique=True, nullable=False)
-    # 创建时间
-    creat_time = db.Column(db.DateTime)
-    # 更新时间
-    update_time = db.Column(db.DateTime)
+    # 国家
+    country = db.Column(db.String(255), nullable=False, default='')
     # is_del
-    is_delete = db.Column(db.Integer)
+    is_delete = db.Column(db.Integer, nullable=False, default=0)
     role_id = reference_col('role')
     department_id = reference_col('department')
     # 该部门和用户的关系, 返回该部门的所有用户
