@@ -316,6 +316,41 @@ class SeachOneIdea(Resource):
         dict["active"] = activedict
         return ApiResponse(dict, ResposeStatus.Success)
 
+
+def SaveActiveAndIdea(data):
+
+
+    now = time.strftime('%Y-%m-%d', time.localtime(time.time()))
+    data = json.loads(request.get_data(as_text=True))
+    session = db.session
+    student = session.query(Idea).filter(Idea.name == data["name"]).first()
+    if student:
+        return ApiResponse("", ResposeStatus.Fail, "该名字已经存在")
+    new_user = Idea(name=data["name"], description=data["description"], creat_time=now, update_time=now)
+    session.add(new_user)
+    session.commit()
+    tag = data["tag"]
+    learning = session.query(Idea).filter(Idea.name == data["name"]).first()
+    now = time.strftime('%Y-%m-%d', time.localtime(time.time()))
+    for value in tag:
+        new_learn_lable = Idea_lab(idea_id=learning.id, tag_id=value, creat_time=now, update_time=now, is_delete=0)
+        session.add(new_learn_lable)
+
+    for value in data["brand"]:
+        new_learn_lable = Idea_lab(idea_id=learning.id, tag_id=value, creat_time=now, update_time=now,
+                                   is_delete=0)
+        session.add(new_learn_lable)
+
+    for value in data["category"]:
+        new_learn_lable = Idea_lab(idea_id=learning.id, tag_id=value, creat_time=now, update_time=now,
+                                   is_delete=0)
+        session.add(new_learn_lable)
+
+    session.commit()
+
+
+
+
 def intersect(nums1, nums2):
     import collections
     a, b = map(collections.Counter, (nums1, nums2))
