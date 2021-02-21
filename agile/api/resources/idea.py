@@ -402,7 +402,6 @@ def SaveActiveAndIdea(activeIds,datas):
                 new_users = Idea(name=idea["name"], description=idea["description"],image=str(idea["imageUrls"]),video=str(idea["videoUrls"]),learning_id=new_user.id,creat_time=now, update_time=now)
                 session.add(new_users)
                 session.commit()
-                print(idea["tags"], "======", type(idea["tags"]))
                 tag = idea["tags"]
                 learning = session.query(Idea).filter(Idea.id == new_users.id).first()
                 now = time.strftime('%Y-%m-%d', time.localtime(time.time()))
@@ -426,7 +425,7 @@ def SaveActiveAndIdea(activeIds,datas):
             learninfo.idea_id = idealist
             session.commit()
 
-
+        return 1
 
 
 
