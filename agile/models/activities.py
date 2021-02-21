@@ -18,11 +18,11 @@ class Activities(db.Model):
     active_object = db.Column(db.String(164))
     # 描述
     description = db.Column(db.String(164))
-
-
     # 创建时间
     create_time = db.Column(db.DateTime, default=datetime.datetime.now)
     # 修改时间
     update_time = db.Column(db.DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
     # is_del
     is_delete = db.Column(db.Integer, default=0)
+    # userId
+    user_id = db.Column(db.Integer)

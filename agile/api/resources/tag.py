@@ -16,27 +16,27 @@ class TagList(Resource):
             type = request.args.get("type")
             if type == "0":
                 allName = db.session.query(Type_table).all()
-                return ApiResponse([{"tag": name.name, "new": getNewState(name.creat_time)} for name in allName],
+                return ApiResponse([{"id": name.id,"tag": name.name, "new": getNewState(name.creat_time)} for name in allName],
                                    ResposeStatus.Success)
             elif type == "1":
                 allName = db.session.query(Details_table).all()
-                return ApiResponse([{"tag": name.name, "new": getNewState(name.creat_time)} for name in allName],
+                return ApiResponse([{"id": name.id,"tag": name.name, "new": getNewState(name.creat_time)} for name in allName],
                                    ResposeStatus.Success)
             elif type == "2":
                 allName = db.session.query(Tag).filter_by(label_type=type).all()
-                return ApiResponse([{"tag": name.label, "new": getNewState(name.create_time)} for name in allName],
+                return ApiResponse([{"id": name.id,"tag": name.label, "new": getNewState(name.create_time)} for name in allName],
                                    ResposeStatus.Success)
             elif type == "3":
                 allName = db.session.query(Tag).filter_by(label_type=type).all()
-                return ApiResponse([{"tag": name.label, "new": getNewState(name.create_time)} for name in allName],
+                return ApiResponse([{"id": name.id,"tag": name.label, "new": getNewState(name.create_time)} for name in allName],
                                    ResposeStatus.Success)
             elif type == "4":
                 allName = db.session.query(Tag).filter_by(label_type=type).all()
-                return ApiResponse([{"tag": name.label, "new": getNewState(name.create_time)} for name in allName],
+                return ApiResponse([{"id": name.id,"tag": name.label, "new": getNewState(name.create_time)} for name in allName],
                                    ResposeStatus.Success)
             elif type == "5":
                 allName = db.session.query(Tag).filter_by(label_type=type).all()
-                return ApiResponse([{"tag": name.label, "new": getNewState(name.create_time)} for name in allName],
+                return ApiResponse([{"id": name.id,"tag": name.label, "new": getNewState(name.create_time)} for name in allName],
                                    ResposeStatus.Success)
 
         except RuntimeError:
@@ -53,22 +53,22 @@ class AllTagList(Resource):
         try:
             result = {}
             allName = db.session.query(Type_table).all()
-            result["activityType"] = [{"tag": name.name, "new": getNewState(name.creat_time)} for name in allName]
+            result["activityType"] = [{"id": name.id,"tag": name.name, "new": getNewState(name.creat_time)} for name in allName]
 
             allName = db.session.query(Details_table).all()
-            result["activityDetails"] = [{"tag": name.name, "new": getNewState(name.creat_time)} for name in allName]
+            result["activityDetails"] = [{"id": name.id,"tag": name.name, "new": getNewState(name.creat_time)} for name in allName]
 
             allName = db.session.query(Tag).filter_by(label_type="LearningsTags").all()
-            result["learningsTags"] = [{"tag": name.label, "new": getNewState(name.create_time)} for name in allName]
+            result["learningsTags"] = [{"id": name.id,"tag": name.label, "new": getNewState(name.create_time)} for name in allName]
 
             allName = db.session.query(Tag).filter_by(label_type="IdeaTags").all()
-            result["ideaTags"] = [{"tag": name.label, "new": getNewState(name.create_time)} for name in allName]
+            result["ideaTags"] = [{"id": name.id,"tag": name.label, "new": getNewState(name.create_time)} for name in allName]
 
             allName = db.session.query(Tag).filter_by(label_type="Brand").all()
-            result["brand"] = [{"tag": name.label, "new": getNewState(name.create_time)} for name in allName]
+            result["brand"] = [{"id": name.id,"tag": name.label, "new": getNewState(name.create_time)} for name in allName]
 
             allName = db.session.query(Tag).filter_by(label_type="Category").all()
-            result["category"] = [{"tag": name.label, "new": getNewState(name.create_time)} for name in allName]
+            result["category"] = [{"id": name.id,"tag": name.label, "new": getNewState(name.create_time)} for name in allName]
 
             return ApiResponse(result, ResposeStatus.Success)
         except RuntimeError:
