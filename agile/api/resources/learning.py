@@ -121,7 +121,7 @@ class SortSearch(Resource):
             if sortTime != 1:
                 student = session.query(Learn).limit(size).offset((page-1)*size).all()
             else:
-                student = session.query(Learn).limit(size).offset((page-1)*size).order_by(Learn.update_time.asc()).all()
+                student = session.query(Learn).limit(size).offset((page-1)*size).all()
             # student = session.query(Learn).all()
             data = []
             countTotle = session.query(func.count(distinct(Learn.id))).scalar()
@@ -200,7 +200,7 @@ class SortSearch(Resource):
                 dicts["TotleNum"] = int(countTotle/size)
             else:
                 dicts["TotleNum"] =int(countTotle/size)+1
-            if sortTime is None:
+            if int(sortTime) ==0:
                 result_six = session.query(Learn).filter(Learn.id.in_(tagnum))
             else:
                 result_six = session.query(Learn).filter(Learn.id.in_(tagnum)).order_by(Learn.update_time.asc())
@@ -315,6 +315,75 @@ class Praises(Resource):
                 learn.is_give = 1
             session.commit()
         return ApiResponse("sucess", ResposeStatus.Success)
+
+class LikeSearchLearn(Resource):
+
+    def get(self):
+        name = request.args.get("name")
+        page = request.args.get("page")
+        size = request.args.get("size")
+        session = db.session
+        names = "%%"+name+"%%"
+        nums = session.query(Learn).filter(Learn.name.like(names)).all()
+        countTotle = len(nums)
+        data = []
+        student = session.query(Learn).filter(Learn.name.like(names)).limit(int(size)).offset((int(page)-1)*int(size)).all()
+        dicts = {}
+        if countTotle % int(size) == 0:
+            dicts["TotleNum"] = int(countTotle / int(size))
+        else:
+            dicts["TotleNum"] = int(countTotle / int(size)) + 1
+        for value in student:
+            parasnum = session.query(func.count(distinct(Praise.id))).filter(Praise.work_id == value.id,
+                                                                             Praise.type == "learning",
+                                                                             Praise.is_give == 1).scalar()
+            dict = {}
+            dict["paraseNum"] = parasnum
+            dict["id"] = value.id
+            dict["name"] = value.name
+            dict["description"] = value.description
+            dict["time"] = value.update_time
+            dict["image"] = value.image
+            dict["video"] = value.video
+            labId = session.query(Learn_lab).filter(Learn_lab.idea_id == value.id).all()
+            tagName = []
+            brandName = []
+            categoryName = []
+            for id in labId:
+                # print(id,"=================")
+                labIds = session.query(Tag).filter(Tag.id == id.tag_id).all()
+                for lab in labIds:
+                    if lab.label_type == "Brand":
+                        brandName.append(lab.label)
+                    elif lab.label_type == "Category":
+                        categoryName.append(lab.label)
+                    else:
+                        tagName.append(lab.label)
+            # dict["tag"] = tagName
+            dict["barnd"] = brandName
+            dict["category"] = categoryName
+            # print(type(dict["ideaId"]),type(value.idea_id),"==================")
+            IdeaData = []
+            if value.idea_id is not None:
+                idealist = json.loads(value.idea_id)
+                for val in idealist:
+                    ideaDict = {}
+                    idea = session.query(Idea).filter(Idea.id == val).first()
+                    if idea is not None:
+                        ideaDict["id"] = idea.id
+                        ideaDict["name"] = idea.name
+                        ideaDict["description"] = idea.description
+                        ideaDict["time"] = idea.update_time
+                        ideaDict["image"] = idea.image
+                        ideaDict["video"] = idea.video
+                        IdeaData.append(ideaDict)
+            dict["idea"] = IdeaData
+            data.append(dict)
+        dicts["data"] = data
+        session.commit()
+        return ApiResponse(dicts, ResposeStatus.Success)
+
+
 
 class SeachOneLean(Resource):
 
