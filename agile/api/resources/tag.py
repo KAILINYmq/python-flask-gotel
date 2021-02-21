@@ -3,7 +3,7 @@ from flask_restplus import Resource
 from sqlalchemy import and_, between
 
 from agile.commons.api_response import ApiResponse, ResposeStatus
-from agile.models import Tag, Guestbook, Type_table,Details_table
+from agile.models import Tag, Guestbook, Type_table, Details_table
 from agile.extensions import db
 from datetime import date, datetime
 import time
@@ -37,6 +37,7 @@ class TagList(Resource):
         except RuntimeError:
             return ApiResponse("Search failed! Please try again.", ResposeStatus.Fail)
 
+
 class AllTagList(Resource):
     """Get all ActivityType"""
 
@@ -51,10 +52,17 @@ class AllTagList(Resource):
 
             allName = db.session.query(Tag).all()
             result["tag"] = [name.label for name in allName]
+            # 返回详细列表
+            # allName = db.session.query(Tag).filter_by(label_type=type).all()
+            # result["tag"] = [name.label for name in allName]
+            # allName = db.session.query(Tag).filter_by(label_type=type).all()
+            # allName = db.session.query(Tag).filter_by(label_type=type).all()
+            # allName = db.session.query(Tag).filter_by(label_type=type).all()
 
             return ApiResponse(result, ResposeStatus.Success)
         except RuntimeError:
             return ApiResponse("Search failed! Please try again.", ResposeStatus.Fail)
+
 
 class InsertTag(Resource):
     """
@@ -67,6 +75,7 @@ class InsertTag(Resource):
 
     def post(self):
         try:
+            # 获取当前的时间
             localtime = time.strftime("%Y-%m-%d", time.localtime())
             data = json.loads(request.get_data(as_text=True))
             if data["tagType"] == "ActivityDetails":
@@ -102,8 +111,10 @@ class InsertTag(Resource):
         except RuntimeError:
             return ApiResponse("Insert failed! Please try again.", ResposeStatus.Fail)
 
+
 class Feedback(Resource):
     """
+    通过判断status返回反馈信息
     status: 0: get all， 1: get 通过， 2: get 未通过， 3: get 未审批
     startTime:Year-month-day
     endTime:Year-month-day

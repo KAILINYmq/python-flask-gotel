@@ -22,3 +22,5 @@ class Learn(db.Model):
     creat_time = db.Column(db.DateTime)
     # 更新时间
     update_time = db.Column(db.DateTime)
+    #
+    active_id = db.Column(db.Integer)

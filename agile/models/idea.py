@@ -20,3 +20,5 @@ class Idea(db.Model):
     creat_time = db.Column(db.DateTime)
     # 更新时间
     update_time = db.Column(db.DateTime)
+    #
+    learning_id = db.Column(db.Integer)
