@@ -49,9 +49,9 @@ class GetAllTotal(Resource):
         result = {}
         totalTimeSpent = 0
         # 获取用户总花费时间
-        data = db.session.query(Type_table).filter_by(user_id=userId).all()
+        data = db.session.query(Activities).filter_by(user_id=userId).all()
         for i in data:
-            totalTimeSpent += i.duration_hours
+            totalTimeSpent += i.active_time
         result["totalTimeSpent"] = totalTimeSpent
         # 获取用户learning总数
         data = db.session.query(Learn).filter_by(user_id=userId).count()
