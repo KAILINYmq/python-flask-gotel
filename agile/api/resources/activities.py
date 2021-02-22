@@ -288,6 +288,8 @@ class Download(Resource):
         os.makedirs(filePath)
         #  2.存储excel
         object = Activities.query.filter(and_(Activities.id == activities_id, Activities.is_delete != 1)).first()
+        if object is None:
+            return ApiResponse(status=ResposeStatus.ParamFail, msg="No data for this activity！")
         image, video, idea, learn = SelectLearnIdea(object.id)
         create_workbook(object, filePath+"Active.xlsx", idea, learn)
         img = re.findall('GOTFL[^\"]*', str(image))
