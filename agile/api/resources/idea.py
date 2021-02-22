@@ -430,7 +430,7 @@ class SeachOneIdea(Resource):
         return ApiResponse(dict, ResposeStatus.Success)
 
 
-def SaveActiveAndIdea(activeIds,datas):
+def SaveActiveAndIdea(userId,activeIds,datas):
 
         # shuju = '''{
 	    #     "learnings": [{
@@ -477,7 +477,7 @@ def SaveActiveAndIdea(activeIds,datas):
             # user =Learn.session.filter(func.lower(User.email) == func.lower(email))
             print(lern["imageUrls"],)
             new_user = Learn(name=lern["name"], description=lern["description"],active_id = activeIds,
-                             image=str(lern["imageUrls"]),video=str(lern["videoUrls"]),creat_time=now, update_time=now)
+                             image=str(lern["imageUrls"]),video=str(lern["videoUrls"]),user_id = userId,creat_time=now, update_time=now)
             session.add(new_user)
             session.commit()
             # for id in data["ideaIdList"]:
@@ -510,7 +510,7 @@ def SaveActiveAndIdea(activeIds,datas):
                 # student = session.query(Idea).filter(Idea.name == idea["name"]).first()
                 # if student:
                 #     return ApiResponse("", ResposeStatus.Fail, "该名字已经存在")
-                new_users = Idea(name=idea["name"], description=idea["description"],image=str(idea["imageUrls"]),video=str(idea["videoUrls"]),learning_id=new_user.id,creat_time=now, update_time=now)
+                new_users = Idea(name=idea["name"], description=idea["description"],user_id = userId,image=str(idea["imageUrls"]),video=str(idea["videoUrls"]),learning_id=new_user.id,creat_time=now, update_time=now)
                 session.add(new_users)
                 session.commit()
                 tag = idea["tags"]
