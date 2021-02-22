@@ -14,6 +14,7 @@ def create_app(testing=False, cli=False):
     """Application factory, used to create application
     """
     app = Flask('agile')
+    CORS(app, supports_credentials=True)
     app.config.from_object('agile.config')
     app.config['debug'] = True
     # if testing is True:
@@ -61,7 +62,7 @@ def configure_extensions(app, cli):
     jwt.init_app(app)
     cache.init_app(app)
     # CORS(app, resources={r"/api/*": {"origins": "*"}})
-    CORS(app, supports_credentials=True)
+    # CORS(app, supports_credentials=True)
     # if cli is True:
     migrate.init_app(app, db)
 
