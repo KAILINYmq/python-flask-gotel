@@ -60,7 +60,8 @@ def configure_extensions(app, cli):
     ma.init_app(app)
     jwt.init_app(app)
     cache.init_app(app)
-    CORS(app, resources={r"/api/*": {"origins": "*"}})
+    # CORS(app, resources={r"/api/*": {"origins": "*"}})
+    CORS(app, supports_credentials=True)
     # if cli is True:
     migrate.init_app(app, db)
 
