@@ -4,11 +4,12 @@ import datetime
 from dateutil.relativedelta import relativedelta
 from flask import request
 from flask_restplus import Resource
+from sqlalchemy import or_
 
 from agile.api.resources.tag import timeConvert
 from agile.commons.api_response import ApiResponse, ResposeStatus
 from agile.extensions import db
-from agile.models import Activities, Type_table, Learn, Idea
+from agile.models import Activities, Type_table, Learn, Idea, User
 
 
 class GetHighLightDate(Resource):
@@ -38,6 +39,7 @@ class GetHighLightDate(Resource):
 
         return ApiResponse(setDay, ResposeStatus.Success)
 
+
 class GetAllTotal(Resource):
     """
     获取时间的总数量，用户learning的总数量，用户ideas的总数量    HTTP方法：get
@@ -62,39 +64,51 @@ class GetAllTotal(Resource):
 
         return ApiResponse(result, ResposeStatus.Success)
 
+
 class GetSplitTotal(Resource):
     """
     获取过去12个月用户上传的数量，获取过去6周用户上传的数量  HTTP方法：GET
     type:learn  or  idea
-    dateType: 0——Month，1——Week
+    timeType: 0——Month，1——Week
     userId: 用户id   （可选项，默认给本公司所有的数量）
+    dateType
     """
 
     def get(self):
         result = {}
-        type = request.args.get("type")
+        activityType = request.args.get("type")
         userId = request.args.get("userId")
+        timeType = request.args.get("timeType")
         dateType = request.args.get("dateType")
         learnTab = Learn
         ideaTab = Idea
 
-        if userId is None:
-            if type == "learn":
-                # 查公司本年12个月的数据
-                data = db.session.query(Learn)
-                result = splitTotal(dateType,data,learnTab)
+        if dateType is None or dateType == "0":
+            # 存最终数据
+            data = []
+            # 得到用户的城市
+            userCountry = db.session.query(User).filter_by(id=int(userId)).first_or_404().country
+            # 得到所有和这个用户一样地区的用户id
+            sameCountryData = db.session.query(User).filter_by(country=userCountry).all()
+            # 得到learn的数据
+            if activityType == "learn":
+                # 把每一个用户查询集都保存下来
+                for user in sameCountryData:
+                    data.append(db.session.query(Learn).filter_by(user_id=user.id))
+                # 查公司本地区本年12个月的数据
+                result = splitTotalCompany(timeType, data, learnTab)
 
-            elif type == "idea":
+            elif activityType == "idea":
                 data = db.session.query(Idea)
-                result = splitTotal(dateType, data,ideaTab)
-        else:
-            if type == "learn":
+                result = splitTotalCompany(timeType, data, ideaTab)
+        elif dateType == "1":
+            if activityType == "learn":
                 # 查用户本年12个月的数据
                 data = db.session.query(Learn).filter_by(user_id=userId)
-                result = splitTotal(dateType, data,learnTab)
-            elif type == "idea":
+                result = splitTotal(timeType, data, learnTab)
+            elif activityType == "idea":
                 data = db.session.query(Idea).filter_by(user_id=userId)
-                result = splitTotal(dateType, data,ideaTab)
+                result = splitTotal(timeType, data, ideaTab)
 
         return ApiResponse(result, ResposeStatus.Success)
 
@@ -129,7 +143,50 @@ def splitTotal(dateType, data, tab):
             # print(str(frontTime) + " - " + str(week) + " = " + str(behindTime))
             # 对数据进行筛选
             result[str(i + 1)] = data.filter(
-                        tab.creat_time.between(behindTime, frontTime)).count()
+                tab.creat_time.between(behindTime, frontTime)).count()
+            frontTime = behindTime
+
+    return result
+
+
+def splitTotalCompany(dateType, data, tab):
+    """
+    dateType: 0 —— Month .  1 —— Week
+    data: 查询集数据
+    tab: 各表格模型类引用
+    用于对公司的分割查询
+    """
+
+    result = {}
+    count = 0
+    if dateType == "0":
+        # 对data数据进行筛选往前倒6周的数据，并且对每一周的数量进行记录
+        frontTime = datetime.date.today()
+        frontTime = datetime.datetime(year=frontTime.year, month=1, day=1)
+        month = relativedelta(months=- 1)
+        for i in range(12):
+            behindTime = frontTime - month
+            # print(str(frontTime) + " - " + str(month) + " = " + str(behindTime))
+            # 对数据进行筛选
+            for j in data:
+                count += j.filter(
+                    tab.creat_time.between(frontTime, behindTime)).count()
+            result[str(i + 1)] = count
+            count = 0
+            frontTime = behindTime
+    elif dateType == "1":
+        # 对data数据进行筛选往前倒6周的数据，并且对每一周的数量进行记录
+        frontTime = datetime.datetime.now()
+        week = datetime.timedelta(days=7)
+        for i in range(6):
+            behindTime = frontTime - week
+            # print(str(frontTime) + " - " + str(week) + " = " + str(behindTime))
+            # 对数据进行筛选
+            for j in data:
+                count += j.filter(
+                    tab.creat_time.between(behindTime, frontTime)).count()
+            result[str(i + 1)] = count
+            count = 0
             frontTime = behindTime
 
     return result
