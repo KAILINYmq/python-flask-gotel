@@ -12,6 +12,7 @@ import json, shutil
 from .idea import SaveActiveAndIdea
 from .learning import SecetLearnInfo
 from agile.commons import s3file
+from flask_jwt_extended import current_user, jwt_required
 
 # 返回单个数据格式
 class ActivitiesSchema(ma.ModelSchema):
@@ -117,19 +118,18 @@ def SelectLearnIdea(id):
 
 
 class ActivitiesAdd(Resource):
+    method_decorators = [jwt_required]
+
     def post(self):
         # 新增活动
-        data = json.loads(request.get_data(as_text=True))
-        parser = reqparse.RequestParser()
-        parser.add_argument('activityName', required=True, help="activityName cannot be blank!")
-        parser.add_argument('activityTypes', required=True, help="activityTypes cannot be blank!")
-        parser.add_argument('durationHours', type=int, required=True, help="durationHours cannot be blank!")
-        parser.add_argument('activityDescription', required=True, help="activityDescription cannot be blank!")
-        parser.add_argument('activityObject', required=True, help="activityObject cannot be blank!")
-        parser.add_argument('id', type=int)
-        parser.add_argument('learnings', required=True, help="learnings cannot be blank!")
-        args = parser.parse_args()
+        # 验证登录
+        try:
+            if current_user.id is None:
+                return ApiResponse(status=ResposeStatus.AuthenticationFailed, msg="Please log in and try again！")
+        except Exception:
+            return ApiResponse(status=ResposeStatus.AuthenticationFailed, msg="Please log in and try again！")
 
+        args = json.loads(request.get_data(as_text=True))
         if args["id"] is not None and args["id"] > 0:
             # 修改
             try:
@@ -141,14 +141,14 @@ class ActivitiesAdd(Resource):
                 active.description = args['activityDescription']
                 active.is_delete = 0
                 db.session.commit()
-                if SaveActiveAndIdea(active.id, data) == 1:
+                if SaveActiveAndIdea(current_user.id, active.id, args) == 1:
                     return ApiResponse(obj=json.dumps({"id": active.id}), status=ResposeStatus.Success, msg="OK")
                 else:
                     db.session.rollback()
-                    return ApiResponse(status=ResposeStatus.ParamFail, msg="Add failed！")
+                    return ApiResponse(status=ResposeStatus.ParamFail, msg="Change failed！")
             except Exception as e:
                 db.session.rollback()
-                return ApiResponse(status=ResposeStatus.ParamFail, msg="Add failed！")
+                return ApiResponse(status=ResposeStatus.ParamFail, msg="Change failed！")
         else:
             # 新增
             try:
@@ -157,12 +157,13 @@ class ActivitiesAdd(Resource):
                                         description=args['activityDescription'], is_delete = 0)
                 db.session.add(activities)
                 db.session.commit()
-                if SaveActiveAndIdea(activities.id, data) == 1:
+                if SaveActiveAndIdea(current_user.id, activities.id, args) == 1:
                     return ApiResponse(obj=json.dumps({"id": activities.id}), status=ResposeStatus.Success, msg="OK")
                 else:
                     db.session.rollback()
                     return ApiResponse(status=ResposeStatus.ParamFail, msg="Add failed！")
             except Exception as e:
+                print(e)
                 db.session.rollback()
                 return ApiResponse(status=ResposeStatus.ParamFail, msg="Add failed！")
     # def put(self):
