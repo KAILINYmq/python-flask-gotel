@@ -1,16 +1,17 @@
 import json
 import time
-
-from flask import request
+from agile import PROJECT_ROOT
+from flask import request, make_response,send_from_directory
 from flask_restplus import Resource
 from flask_jwt_extended import current_user
 from agile.commons.api_response import ResposeStatus, ApiResponse
 from agile.extensions import db
 from agile.models import Idea, Idea_lab ,Tag,Praise,Learn,Activities,Learn_lab
 from flask_jwt_extended import jwt_required
-
-from sqlalchemy import func
+import json ,os,shutil,re,xlsxwriter,zipfile,requests
+from sqlalchemy import func,and_
 from sqlalchemy import distinct
+from agile.commons import s3file
 # 新增学习
 class AddMyIdea(Resource):
     def post(self):
@@ -87,14 +88,14 @@ class GetAllIdea(Resource):
 
 # 根据tag,brand，category进行查询
 class SortSearchIdea(Resource):
-
+    method_decorators = [jwt_required]
     def post(self):
         data = json.loads(request.get_data(as_text=True))
         tag = data["tag"]
         brand = data["brand"]
         category = data["category"]
         sortTime = data["sort"]
-
+        idd = current_user.id
         page = int(data["page"])
         size = int(data["size"])
         if tag == 0 and brand == 0 and category == 0:
@@ -115,13 +116,25 @@ class SortSearchIdea(Resource):
                                                                                  Praise.type == "idea",
                                                                                  Praise.is_give == 1).scalar()
                 dict = {}
+                parise = Praise.query.filter(Praise.work_id == value.id, Praise.type == "idea",
+                                             Praise.user_id == str(idd), Praise.is_give == 1).first()
+                if parise is not None:
+                    dict["isParise"] = 1
+                else:
+                    dict["isParise"] = 0
                 dict["paraseNum"] = parasnum
                 dict["id"] = value.id
                 dict["name"] = value.name
                 dict["description"] = value.description
                 dict["time"] = value.update_time
-                dict["image"] = value.image
-                dict["video"] = value.video
+                if value.image is not None and len(value.image) > 0:
+                    dict["image"] = json.loads(value.image)
+                else:
+                    dict["image"] = []
+                if value.video is not None and len(value.video) > 0:
+                    dict["video"] = json.loads(value.video)
+                else:
+                    dict["video"] = []
                 labId = session.query(Idea_lab).filter(Idea_lab.idea_id == value.id).all()
                 tagName = []
                 brandName = []
@@ -174,13 +187,25 @@ class SortSearchIdea(Resource):
                                                                                  Praise.type == "idea",
                                                                                  Praise.is_give == 1).scalar()
                 dict = {}
+                parise = Praise.query.filter(Praise.work_id == val.id, Praise.type == "idea",
+                                             Praise.user_id == str(idd), Praise.is_give == 1).first()
+                if parise is not None:
+                    dict["isParise"] = 1
+                else:
+                    dict["isParise"] = 0
                 dict["paraseNum"] = parasnum
                 dict["id"] = val.id
                 dict["name"] = val.name
                 dict["description"] = val.description
                 dict["time"] = val.creat_time
-                dict["image"] = val.image
-                dict["video"] = val.video
+                if val.image is not None and len(val.image) > 0:
+                    dict["image"] = json.loads(val.image)
+                else:
+                    dict["image"] = []
+                if val.video is not None and len(val.video) > 0:
+                    dict["video"] = json.loads(val.video)
+                else:
+                    dict["video"] = []
                 labId = session.query(Idea_lab).filter(Idea_lab.idea_id == val.id).all()
                 tagName = []
                 brandName = []
@@ -254,13 +279,17 @@ class PraisesIdea(Resource):
             new_parise = Praise(user_id=id, type="idea", work_id=data["id"], is_give=1,time=now)
             session.add(new_parise)
             session.commit()
+            return ApiResponse("1", ResposeStatus.Success)
         else:
             if learn.is_give == 1:
                 learn.is_give = 0
+                session.commit()
+                return ApiResponse("0", ResposeStatus.Success)
             else:
                 learn.is_give = 1
-            session.commit()
-        return ApiResponse("sucess",ResposeStatus.Success)
+                session.commit()
+                return ApiResponse("1", ResposeStatus.Success)
+
 
 class LikeSearchIdea(Resource):
 
@@ -331,12 +360,18 @@ class SeachOneIdea(Resource):
         dict["name"] = value.name
         dict["description"] = value.description
         dict["time"] = value.update_time
-        dict["image"] = value.image
-        dict["video"] = value.video
+        if value.image is not None and len(value.image)>0:
+            dict["image"] = json.loads(value.image)
+        else:
+            dict["image"] = []
+        if value.video is not None and len(value.video) > 0:
+            dict["video"] = json.loads(value.video)
+        else:
+            dict["video"] = []
         labId = session.query(Idea_lab).filter(Idea_lab.idea_id == value.id).all()
         tagName = []
         brandName = []
-        categoryName = []
+        categoryName = ""
         for id in labId:
             # print(id,"=================")
             labIds = session.query(Tag).filter(Tag.id == id.tag_id).all()
@@ -344,19 +379,43 @@ class SeachOneIdea(Resource):
                 if lab.label_type == "Brand":
                     brandName.append(lab.label)
                 elif lab.label_type == "Category":
-                    categoryName.append(lab.label)
+                    categoryName=lab.label
                 else:
                     tagName.append(lab.label)
         # dict["tag"] = tagName
         dict["barnd"] = brandName
         dict["category"] = categoryName
+        dict["tag"] = tagName
         learn = session.query(Learn).filter(Learn.id == value.learning_id).first()
         learndict ={}
         learndict["id"] = learn.id
         learndict["name"] = learn.name
         learndict["description"] = learn.description
-        learndict["image"] = learn.image
-        learndict["video"] = learn.video
+        labId = session.query(Learn_lab).filter(Learn_lab.idea_id == value.id).all()
+        tagNamed = []
+        brandNamed = []
+        categoryNamed = ""
+        for id in labId:
+            # print(id,"=================")
+            labIdss = session.query(Tag).filter(Tag.id == id.tag_id).all()
+            for lab in labIdss:
+                if lab.label_type == "Brand":
+                    brandNamed.append(lab.label)
+                elif lab.label_type == "Category":
+                    categoryNamed = lab.label
+                else:
+                    tagNamed.append(lab.label)
+        learndict["tag"] = tagNamed
+        learndict["barnd"] = brandNamed
+        learndict["category"] = categoryNamed
+        if learn.image is not None and len(learn.image) > 0:
+            dict["image"] = json.loads(value.image)
+        else:
+            dict["image"] = []
+        if learn.video is not None and len(learn.video) > 0:
+            learndict["video"] = json.loads(value.video)
+        else:
+            learndict["video"] = []
         learndict["time"] = learn.update_time
         dict["learning"] = learndict
         active = session.query(Activities).filter(Activities.id == learn.active_id).first()
@@ -479,7 +538,89 @@ def SaveActiveAndIdea(activeIds,datas):
 
         return 1
 
+class DownloadIdea(Resource):
+    def get(self, idea_id):
+        # 1.创建文件夹
+        path = PROJECT_ROOT+"/static/"
+        fileDownloadPath = path.replace('\\', '/')
+        filePath = fileDownloadPath+ str("idea"+str(idea_id))+"/"
+        if os.path.exists(filePath):
+            shutil.rmtree(filePath)
+        os.makedirs(filePath)
+        #  2.存储excel
+        object = Idea.query.filter(and_(Idea.id == idea_id)).first()
+        # image, video, idea, learn = SelectLearnIdea(object.id)
+        # active ，查询idea
+        print(object.image,"==",type(object.image))
+        image = []
+        video = []
+        learning = Learn.query.filter(and_(Learn.id == object.learning_id)).first()
+        active =Activities.query.filter(and_(Activities.id == learning.active_id)).first()
+        if learning.image is not None and len(learning.image) > 0:
+            for im in json.loads(learning.image):
+                image.append(im)
+        if learning.video is not None and len(learning.video) > 0:
+            for vi in json.loads(learning.video):
+                video.append(vi)
+        if object.image is not None and len(object.image) > 0:
+            for im in json.loads(object.image):
+                image.append(im)
+        if object.video is not None and len(object.video) > 0:
+            for vi in json.loads(object.video):
+                video.append(vi)
+        create_workbook(object, filePath+"idea.xlsx", active, learning)
+        # img = re.findall('GOTFL[^\"]*', str(image))
+        # vid = re.findall('GOTFL[^\"]*', str(video))
+        img = image
+        vid = video
+        # 3. 存储图片 存储视频
+        if img is not None:
+            for i in img:
+                getFile(filePath, s3file.DEFAULT_BUCKET.generate_presigned_url(obj_key=i),
+                        "Image-" + str(i.index(i)) + i[-4:])
+        if vid is not None:
+            for v in vid:
+                getFile(filePath, s3file.DEFAULT_BUCKET.generate_presigned_url(obj_key=v),
+                        "Video-" + str(v.index(v)) + v[-4:])
+        # 4. 打包zip
+        make_zip(filePath, fileDownloadPath+"idea"+str(idea_id)+".zip")
+        # 5. 返回zip
+        response = make_response(
+            send_from_directory(fileDownloadPath, "idea"+str(idea_id)+".zip", as_attachment=True))
+        return response
 
+def create_workbook(object, filePath, active, learn):
+    # 创建Excel文件,不保存,直接输出
+    workbook = xlsxwriter.Workbook(filePath)
+    worksheet = workbook.add_worksheet("sheet")
+    title = ["Idea Name", "Idea Description", "time", "ActiveName", "ActiveDescription",  "LearningName","LearningDescription"]
+    worksheet.write_row('A1', title)
+    worksheet.write_row('A2', [str(object.name),
+                               str(object.description),
+                               str(object.creat_time),
+                               # TODO 解析object
+                               str(active.active),
+                               str(active.description),
+                               str(learn.name),
+                               str(learn.description)
+                               ])
+    workbook.close()
+
+def getFile(filePath, url, fileName):
+    response = requests.get(url).content
+    with open(filePath+fileName, 'wb') as f:
+        f.write(response)
+    print ("Sucessful to download "+fileName)
+
+def make_zip(filePath, source_dir):
+  zipf = zipfile.ZipFile(source_dir, 'w')
+  pre_len = len(os.path.dirname(filePath))
+  for parent, dirnames, filenames in os.walk(filePath):
+    for filename in filenames:
+      pathfile = os.path.join(parent, filename)
+      arcname = pathfile[pre_len:].strip(os.path.sep)
+      zipf.write(pathfile, arcname)
+  zipf.close()
 
 
 
