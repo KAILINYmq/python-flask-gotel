@@ -9,6 +9,10 @@ import os, zipfile, re, xlsxwriter, requests
 from datetime import datetime
 import json, shutil
 
+from .idea import SaveActiveAndIdea
+from .learning import SecetLearnInfo
+from agile.commons import s3file
+
 # 返回单个数据格式
 class ActivitiesSchema(ma.ModelSchema):
     class Meta:
@@ -70,22 +74,27 @@ class ActivitiesList(Resource):
             datas = []
             for k in object:
                 data = {}
+                data["image"] = []
+                data["video"] = []
                 data["id"] = k.id
                 data["activeName"] = k.active
                 data["activeType"] = k.active_type
                 data["description"] = k.description
-                data["image"], data["video"], data["ideaTags"], data["learnTags"] = SelectLearnIdea(k.id)
-                data["image"] = re.findall(
-                    'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', str(data["image"]))
-                data["video"] = re.findall(
-                    'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', str(data["video"]))
+                image, video, data["ideaTags"], data["learnTags"] = SelectLearnIdea(k.id)
+                img = re.findall('GOTFL[^\"]*', str(image))
+                vid = re.findall('GOTFL[^\"]*', str(video))
+                if img is not None:
+                    for i in img:
+                        data["image"].append(s3file.DEFAULT_BUCKET.generate_presigned_url(obj_key=i))
+                if vid is not None:
+                    for v in vid:
+                        data["video"].append(s3file.DEFAULT_BUCKET.generate_presigned_url(obj_key=v))
                 data["createTime"] = k.create_time
                 datas.append(data)
             paginate = Activities.query.filter(and_(*filterList)).paginate(args["page"], args["size"])
             return ApiResponse(obj={"activitiesData": datas, "total":paginate.pages},
                                status=ResposeStatus.Success, msg="OK")
         except Exception as e:
-            print(e)
             return ApiResponse(status=ResposeStatus.ParamFail, msg="参数错误!")
 
 def SelectLearnIdea(id):
@@ -130,17 +139,16 @@ class ActivitiesAdd(Resource):
                 active.active_time = args['durationHours']
                 active.active_object = args['activityObject']
                 active.description = args['activityDescription']
+                active.is_delete = 0
                 db.session.commit()
-                # TODO
-                # if text(active.id, args['learnings']) == 1:
-                # if text(active.id, data) == 1:
-                return ApiResponse(obj=json.dumps({"id": active.id}), status=ResposeStatus.Success, msg="OK")
-                # else:
-                #     db.session.rollback()
-                #     return ApiResponse(status=ResposeStatus.ParamFail, msg="添加失败！")
-            except Exception:
+                if SaveActiveAndIdea(active.id, data) == 1:
+                    return ApiResponse(obj=json.dumps({"id": active.id}), status=ResposeStatus.Success, msg="OK")
+                else:
+                    db.session.rollback()
+                    return ApiResponse(status=ResposeStatus.ParamFail, msg="Add failed！")
+            except Exception as e:
                 db.session.rollback()
-                return ApiResponse(status=ResposeStatus.ParamFail, msg="添加失败！")
+                return ApiResponse(status=ResposeStatus.ParamFail, msg="Add failed！")
         else:
             # 新增
             try:
@@ -149,14 +157,14 @@ class ActivitiesAdd(Resource):
                                         description=args['activityDescription'], is_delete = 0)
                 db.session.add(activities)
                 db.session.commit()
-                # if text(activities.id, args['learnings']) == 1:
-                return ApiResponse(obj=json.dumps({"id": activities.id}), status=ResposeStatus.Success, msg="OK")
-                # else:
-                #     db.session.rollback()
-                #     return ApiResponse(status=ResposeStatus.ParamFail, msg="添加失败！")
-            except Exception:
+                if SaveActiveAndIdea(activities.id, data) == 1:
+                    return ApiResponse(obj=json.dumps({"id": activities.id}), status=ResposeStatus.Success, msg="OK")
+                else:
+                    db.session.rollback()
+                    return ApiResponse(status=ResposeStatus.ParamFail, msg="Add failed！")
+            except Exception as e:
                 db.session.rollback()
-                return ApiResponse(status=ResposeStatus.ParamFail, msg="添加失败！")
+                return ApiResponse(status=ResposeStatus.ParamFail, msg="Add failed！")
     # def put(self):
     #     # 修改活动
     #     parser = reqparse.RequestParser()
@@ -183,7 +191,7 @@ class ActivitiesAdd(Resource):
     #             db.session.commit()
     #             return ApiResponse(obj=json.dumps({"id": active.id}), status=ResposeStatus.Success, msg="OK")
     #         except Exception:
-    #             return ApiResponse(status=ResposeStatus.ParamFail, msg="添加失败！")
+    #             return ApiResponse(status=ResposeStatus.ParamFail, msg="Add failed！")
     #     if args['status'] == 2:
     #         parser.add_argument('idea_name', required=True, help="idea_name cannot be blank!")
     #         parser.add_argument('learn_name', required=True, help="learn_name cannot be blank!")
@@ -198,7 +206,7 @@ class ActivitiesAdd(Resource):
     #             db.session.commit()
     #             return ApiResponse(obj=json.dumps({"id": active.id}), status=ResposeStatus.Success, msg="OK")
     #         except Exception:
-    #             return ApiResponse(status=ResposeStatus.ParamFail, msg="添加失败！")
+    #             return ApiResponse(status=ResposeStatus.ParamFail, msg="Add failed！")
     #     if args['status'] == 3:
     #         parser.add_argument('image', required=True, help="image cannot be blank!")
     #         parser.add_argument('video', required=True, help="video cannot be blank!")
@@ -213,14 +221,15 @@ class ActivitiesAdd(Resource):
     #             db.session.commit()
     #             return ApiResponse(obj=json.dumps({"id": active.id}), status=ResposeStatus.Success, msg="OK")
     #         except Exception:
-    #             return ApiResponse(status=ResposeStatus.ParamFail, msg="添加失败！")
+    #             return ApiResponse(status=ResposeStatus.ParamFail, msg="Add failed！")
     #     return ApiResponse(status=ResposeStatus.ParamFail, msg="参数错误！")
 
 class SingleActivities(Resource):
-    # /activities/<int:activities_id>
     def get(self, activities_id):
         # 查询单个活动数据
         object = Activities.query.filter(and_(Activities.id == activities_id, Activities.is_delete != 1)).first()
+        if object is None:
+            return ApiResponse(status=ResposeStatus.ParamFail, msg="No data for this activity！")
         data = {}
         data["name"] = object.active
         data["type"] = object.active_type
@@ -230,10 +239,11 @@ class SingleActivities(Resource):
         data["learnings"] = []
         LearnData = Learn.query.filter(and_(Learn.active_id == activities_id)).all()
         for l in LearnData:
-            learn = {}
-            # TODO
-            # text(l.id)
-            data["learnings"].append(learn)
+            try:
+                learn = SecetLearnInfo(l.id)
+                data["learnings"].append(learn)
+            except Exception:
+                pass
         return ApiResponse(obj=data, status=ResposeStatus.Success, msg="OK")
 
     def delete(self, activities_id):
@@ -279,17 +289,15 @@ class Download(Resource):
         object = Activities.query.filter(and_(Activities.id == activities_id, Activities.is_delete != 1)).first()
         image, video, idea, learn = SelectLearnIdea(object.id)
         create_workbook(object, filePath+"Active.xlsx", idea, learn)
+        img = re.findall('GOTFL[^\"]*', str(image))
+        vid = re.findall('GOTFL[^\"]*', str(video))
         # 3. 存储图片 存储视频
-        if image is not None:
-            imageUrl = re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', str(image))
-            if imageUrl is not None:
-                for data in imageUrl:
-                    getFile(filePath, data, "Image"+str(imageUrl.index(data)))
-        if video is not None:
-            videoUrl = re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', str(video))
-            if videoUrl is not None:
-                for data in videoUrl:
-                    getFile(filePath, data, "Video" + str(videoUrl.index(data)))
+        if img is not None:
+            for i in img:
+                getFile(filePath, s3file.DEFAULT_BUCKET.generate_presigned_url(obj_key=i), "Image-" + str(i.index(i))+i[-4:])
+        if vid is not None:
+            for v in vid:
+                getFile(filePath, s3file.DEFAULT_BUCKET.generate_presigned_url(obj_key=v), "Video-" + str(v.index(v))+v[-4:])
         # 4. 打包zip
         make_zip(filePath, fileDownloadPath+str(activities_id)+".zip")
         # 5. 返回zip
@@ -316,7 +324,7 @@ def create_workbook(object, filePath, idea, learn):
 
 def getFile(filePath, url, fileName):
     response = requests.get(url).content
-    with open(filePath+fileName+url[-4:], 'wb') as f:
+    with open(filePath+fileName, 'wb') as f:
         f.write(response)
     print ("Sucessful to download "+fileName)
 
