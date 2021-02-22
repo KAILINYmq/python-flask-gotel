@@ -9,7 +9,7 @@ from sqlalchemy import or_
 from agile.api.resources.tag import timeConvert
 from agile.commons.api_response import ApiResponse, ResposeStatus
 from agile.extensions import db
-from agile.models import Activities, Type_table, Learn, Idea, User
+from agile.models import Activities, Type_table, Learn, Idea, User, department_category, Category
 
 
 class GetHighLightDate(Resource):
@@ -111,6 +111,48 @@ class GetSplitTotal(Resource):
                 result = splitTotal(timeType, data, ideaTab)
 
         return ApiResponse(result, ResposeStatus.Success)
+
+
+class GetCategory(Resource):
+    """
+    获取本公司，本用户地区的learning下用户category和idea下用户category数量
+    Get
+    请求参数：
+    userId
+    """
+
+    def get(self):
+        idResult = {}
+        nameResult = {}
+        # 1. 获取userId参数
+        userId = request.args.get("userId")
+        # 2. 通过userId获取到本user的country
+        userCountry = db.session.query(User).filter_by(id = userId).first_or_404().country
+        # 3. 通过country获取所有和这个用户城市一样的用户
+        sameCountryUser = db.session.query(User).filter_by(country=userCountry).all()
+        # 4. 获取department_category表的数据（list）
+        departmentCategoryList = db.session.query(department_category).all()
+        # 5. 把user的department_id取出并去重
+        userDepartmentId = set()
+        # 6. 循环user的department_id添加进set
+        for i in sameCountryUser:
+            userDepartmentId.add(i.department_id)
+        # 7. 查询存储每一个department_id在department_category表中的数据
+        count = 0
+        # 8. 遍历关联表，如果department_id在userDepartmentId中，存下对应的键和值
+        for i in departmentCategoryList:
+            if i[0] in userDepartmentId:
+                if str(i[1]) in idResult:
+                    idResult[str(i[1])] += 1
+                else:
+                    idResult[str(i[1])] = 1
+            count += 1
+        # 9. 把idResult对应的category id转成名字返回
+        for k in idResult:
+            name = db.session.query(Category).filter_by(id=int(k)).first_or_404().name
+            nameResult[name] = idResult[k]
+
+        return ApiResponse("Hello", ResposeStatus.Success)
 
 
 def splitTotal(dateType, data, tab):
