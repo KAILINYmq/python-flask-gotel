@@ -24,3 +24,5 @@ class Idea(db.Model):
     learning_id = db.Column(db.Integer)
     # 用户id
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+
+    activityObject = db.Column(db.String(255))
