@@ -186,7 +186,7 @@ class Feedback(Resource):
                         Guestbook.time.between(timeList[0], timeList[1])).filter_by(user_id=userId).all()
 
             for i in data:
-                temp = {"id": i.id, "type": i.type, "description": i.description, "time": i.time, "state": i.state,
+                temp = {"id": i.id, "type": i.type, "description": i.description, "time": str(i.time).split(" ")[0], "state": i.state,
                         "userId": i.user_id}
                 feedbackData.append(temp)
 
