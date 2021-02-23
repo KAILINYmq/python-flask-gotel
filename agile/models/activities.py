@@ -15,7 +15,7 @@ class Activities(db.Model):
     # 活动持续时间
     active_time = db.Column(db.Integer)
     # 活动对象
-    active_object = db.Column(db.String(164))
+    active_object = db.Column(db.String(364))
     # 描述
     description = db.Column(db.String(164))
     # 创建时间
