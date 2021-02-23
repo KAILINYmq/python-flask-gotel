@@ -78,7 +78,7 @@ class MeSchema(ma.ModelSchema):
     department = fields.Nested(DepartmentSchema, dump_only=True)
     role = ma.Function(lambda obj: obj.role.name)
     permissions = ma.Function(lambda obj: obj.role.authorized_permissions())
-    statistics = ma.Method("dump_statistics")
+    # statistics = ma.Method("dump_statistics")
     created_by = ma.Function(
         lambda obj: obj.created_by.username if obj.created_by else "", dump_only=True
     )
@@ -146,7 +146,7 @@ class MyProfileResource(Resource):
     responses = {
         200: {
             "description": "A list of colors (may be filtered by palette)",
-            "schema": UserSchema,
+            "schema": MeSchema,
         }
     }
 
@@ -158,11 +158,11 @@ class MyProfileResource(Resource):
             ["User"],
             None,
             "return user profile and authorizations",
-            UserSchema,
+            MeSchema,
         )
     )
     def get(self):
-        schema = UserSchema()
+        schema = MeSchema()
         return ApiResponse(schema.dump(current_user), ResposeStatus.Success)
 
 
