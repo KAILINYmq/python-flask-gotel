@@ -14,6 +14,7 @@ from .learning import SecetLearnInfo
 from agile.commons import s3file
 from flask_jwt_extended import current_user, jwt_required
 
+
 # 返回单个数据格式
 class ActivitiesSchema(ma.ModelSchema):
     class Meta:
@@ -154,7 +155,7 @@ class ActivitiesAdd(Resource):
             try:
                 activities = Activities( active = args['activityTypes'], active_type = args['activityDetails'],
                                         active_time=args['durationHours'], active_object=args['activityObject'],
-                                        description=args['activityDescription'], is_delete = 0)
+                                        description=args['activityDescription'], user_id = current_user.id, is_delete = 0)
                 db.session.add(activities)
                 db.session.commit()
                 if SaveActiveAndIdea(current_user.id, activities.id, args) == 1:
