@@ -258,7 +258,7 @@ class SortSearch(Resource):
                 dict["id"] = val.id
                 dict["name"] = val.name
                 dict["description"] = val.description
-                dict["time"] = value.update_time.strftime("%Y/%m/%d")
+                dict["time"] = val.update_time.strftime("%Y/%m/%d")
                 if val.image is not None and len(val.image) > 0:
                     dict["image"] = json.loads(val.image)
                 else:
