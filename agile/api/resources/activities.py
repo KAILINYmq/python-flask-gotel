@@ -6,7 +6,7 @@ from agile.extensions import ma, db
 from agile import PROJECT_ROOT
 from sqlalchemy import and_
 import os, zipfile, re, xlsxwriter, requests
-from datetime import datetime
+from datetime import datetime, timedelta
 import json, shutil
 
 from .idea import SaveActiveAndIdea
@@ -90,7 +90,7 @@ class ActivitiesList(Resource):
                 if vid is not None:
                     for v in vid:
                         data["video"].append(s3file.DEFAULT_BUCKET.generate_presigned_url(obj_key=v))
-                data["createTime"] = k.create_time
+                data["createTime"] = datetime.date(k.create_time + timedelta(days=1))
                 datas.append(data)
             paginate = Activities.query.filter(and_(*filterList)).paginate(args["page"], args["size"])
             return ApiResponse(obj={"activitiesData": datas, "total":paginate.pages},
@@ -134,8 +134,8 @@ class ActivitiesAdd(Resource):
             # 修改
             try:
                 active = Activities.query.filter_by(id=args['id']).first()
-                active.active = args['activityName']
-                active.active_type = args['activityTypes']
+                active.active = args['activityTypes']
+                active.active_type = args['activityDetails']
                 active.active_time = args['durationHours']
                 active.active_object = args['activityObject']
                 active.description = args['activityDescription']
@@ -152,7 +152,7 @@ class ActivitiesAdd(Resource):
         else:
             # 新增
             try:
-                activities = Activities(active=args['activityName'], active_type=args['activityTypes'],
+                activities = Activities( active = args['activityTypes'], active_type = args['activityDetails'],
                                         active_time=args['durationHours'], active_object=args['activityObject'],
                                         description=args['activityDescription'], is_delete = 0)
                 db.session.add(activities)
@@ -163,7 +163,6 @@ class ActivitiesAdd(Resource):
                     db.session.rollback()
                     return ApiResponse(status=ResposeStatus.ParamFail, msg="Add failed！")
             except Exception as e:
-                print(e)
                 db.session.rollback()
                 return ApiResponse(status=ResposeStatus.ParamFail, msg="Add failed！")
     # def put(self):
@@ -258,7 +257,6 @@ class SingleActivities(Resource):
         return ApiResponse(status=ResposeStatus.Success, msg="OK")
 
 class Activity(Resource):
-    # /api/v1/activities/activity
     def get(self):
         datas = []
         schema = ActivitiesSchemaTypes()
