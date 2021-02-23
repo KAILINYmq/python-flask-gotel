@@ -44,16 +44,7 @@ class ActivitiesList(Resource):
         # 查询活动数据
         # 1.获取参数
         try:
-            parser = reqparse.RequestParser()
-            parser.add_argument('name')
-            parser.add_argument('type')
-            parser.add_argument('startTime')
-            parser.add_argument('endTime')
-            parser.add_argument('learn')
-            parser.add_argument('idea')
-            parser.add_argument('page', type=int, required=True)
-            parser.add_argument('size', type=int, required=True)
-            args = parser.parse_args()
+            args = json.loads(request.get_data(as_text=True))
         except Exception as e:
             return ApiResponse(status=ResposeStatus.ParamFail, msg="参数错误!")
 
@@ -61,16 +52,16 @@ class ActivitiesList(Resource):
         filterList = []
         filterList.append(Activities.is_delete != 1)
         try:
-            if args["name"] is not None:
+            if args["name"] is not "":
                 filterList.append(Activities.active == args["name"])
-            if args["type"] is not None:
+            if args["type"] is not "":
                 filterList.append(Activities.active_type == args["type"])
             if args["startTime"] and args["endTime"] is not None:
                 filterList.append(Activities.create_time >= datetime.strptime(args["startTime"], '%Y-%m-%d  %H:%M:%S'))
                 filterList.append(Activities.create_time <= datetime.strptime(args["endTime"], '%Y-%m-%d  %H:%M:%S'))
-            if args["learn"] is not None:
+            if args["learn"] is not "":
                 filterList.append(Activities.idea_name.like('%'+args["learn"]+'%'))
-            if args["idea"] is not None:
+            if args["idea"] is not "":
                 filterList.append(Activities.learn_name.like('%'+args["idea"]+'%'))
             object = Activities.query.filter(and_(*filterList)).offset((args["page"]-1) * args["size"]).limit(args["size"])
             datas = []
@@ -153,7 +144,7 @@ class ActivitiesAdd(Resource):
         else:
             # 新增
             try:
-                activities = Activities( active = args['activityTypes'], active_type = args['activityDetails'],
+                activities = Activities(active=args['activityTypes'], active_type=args['activityDetails'],
                                         active_time=args['durationHours'], active_object=args['activityObject'],
                                         description=args['activityDescription'], user_id = current_user.id, is_delete = 0)
                 db.session.add(activities)
