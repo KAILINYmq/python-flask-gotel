@@ -115,7 +115,7 @@ class GetAllLearn(Resource):
 
 
 # 根据tag,brand，category进行查询
-class SortSearch(Resource):
+class SearchLearning(Resource):
     method_decorators = [jwt_required]
 
     def get(self):
@@ -145,9 +145,9 @@ class SortSearch(Resource):
             countTotle = session.query(func.count(distinct(Learn.id))).scalar()
             dicts = {}
             if countTotle % size == 0:
-                dicts["TotleNum"] = int(countTotle / size)
+                dicts["totalNum"] = int(countTotle / size)
             else:
-                dicts["TotleNum"] = int(countTotle / size) + 1
+                dicts["totalNum"] = int(countTotle / size) + 1
             for value in student:
                 parasnum = session.query(func.count(distinct(Praise.id))).filter(Praise.work_id == value.id,
                                                                                  Praise.type == "learning",
@@ -156,10 +156,10 @@ class SortSearch(Resource):
                 parise = Praise.query.filter(Praise.work_id == value.id, Praise.type == "learning",
                                              Praise.user_id == str(idd), Praise.is_give == 1).first()
                 if parise is not None:
-                    dict["isParise"] = 1
+                    dict["isPraise"] = 1
                 else:
-                    dict["isParise"] = 0
-                dict["paraseNum"] = parasnum
+                    dict["isPraise"] = 0
+                dict["praiseNum"] = parasnum
                 dict["id"] = value.id
                 dict["name"] = value.name
                 dict["description"] = value.description
@@ -187,7 +187,7 @@ class SortSearch(Resource):
                         else:
                             tagName.append(lab.label)
                 # dict["tag"] = tagName
-                dict["barnd"] = brandName
+                dict["brand"] = brandName
                 dict["category"] = categoryName
                 # print(type(dict["ideaId"]),type(value.idea_id),"==================")
                 IdeaData = []
@@ -233,9 +233,9 @@ class SortSearch(Resource):
             countTotle = session.query(func.count(distinct(Learn.id))).filter(Learn.id.in_(tagnum)).scalar()
             dicts = {}
             if countTotle % size == 0:
-                dicts["TotleNum"] = int(countTotle / size)
+                dicts["totalNum"] = int(countTotle / size)
             else:
-                dicts["TotleNum"] = int(countTotle / size) + 1
+                dicts["totalNum"] = int(countTotle / size) + 1
             if int(sortTime) == 0:
                 result_six = session.query(Learn).filter(Learn.id.in_(tagnum))
             else:
@@ -251,10 +251,10 @@ class SortSearch(Resource):
                 parise = Praise.query.filter(Praise.work_id == val.id, Praise.type == "learning",
                                              Praise.user_id == str(idd), Praise.is_give == 1).first()
                 if parise is not None:
-                    dict["isParise"] = 1
+                    dict["isPraise"] = 1
                 else:
-                    dict["isParise"] = 0
-                dict["paraseNum"] = parasnum
+                    dict["isPraise"] = 0
+                dict["praiseNum"] = parasnum
                 dict["id"] = val.id
                 dict["name"] = val.name
                 dict["description"] = val.description
@@ -282,7 +282,7 @@ class SortSearch(Resource):
                         else:
                             tagName.append(lab.label)
                 # dict["tag"] = tagName
-                dict["barnd"] = brandName
+                dict["brand"] = brandName
                 dict["category"] = categoryName
                 IdeaData = []
                 if val.idea_id is not None:
@@ -378,7 +378,7 @@ class Praises(Resource):
                 return ApiResponse("1", ResposeStatus.Success)
 
 
-class LikeSearchLearn(Resource):
+class __SearchLearning(Resource):
 
     def get(self):
         name = request.args.get("name")
@@ -447,11 +447,10 @@ class LikeSearchLearn(Resource):
         return ApiResponse(dicts, ResposeStatus.Success)
 
 
-class SeachOneLean(Resource):
+class GetLearning(Resource):
 
-    def get(self):
-        id = request.args.get("id")
-        dict = SecetLearnInfo(id)
+    def get(self, learning_id):
+        dict = SecetLearnInfo(learning_id)
         # session = db.session
         # value = session.query(Learn).filter(Learn.id == id).first()
         #
@@ -525,23 +524,23 @@ def intersect(nums1, nums2):
 
 
 class DownloadLearn(Resource):
-    def get(self, learn_id):
+    def get(self, learning_id):
         # 1.创建文件夹
-        print(type(learn_id))
+        print(type(learning_id))
         path = PROJECT_ROOT + "/static/"
         fileDownloadPath = path.replace('\\', '/')
-        filePath = fileDownloadPath + str("learn" + str(learn_id)) + "/"
+        filePath = fileDownloadPath + str("learn" + str(learning_id)) + "/"
         if os.path.exists(filePath):
             shutil.rmtree(filePath)
         os.makedirs(filePath)
         #  2.存储excel
-        object = Learn.query.filter(and_(Learn.id == learn_id)).first()
+        object = Learn.query.filter(and_(Learn.id == learning_id)).first()
         # image, video, idea, learn = SelectLearnIdea(object.id)
         # active ，查询idea
         image = json.loads(object.image)
         video = json.loads(object.video)
         active = Activities.query.filter(and_(Activities.id == object.active_id)).first()
-        idea = Idea.query.filter(and_(Idea.learning_id == learn_id)).all()
+        idea = Idea.query.filter(and_(Idea.learning_id == learning_id)).all()
         ideaName = []
         for ea in idea:
             ideaName.append(ea.name)
@@ -571,10 +570,10 @@ class DownloadLearn(Resource):
 
                 # getFile(filePath, data, "Video" + str(videoUrl.index(data)))
         # 4. 打包zip
-        make_zip(filePath, fileDownloadPath + "learn" + str(learn_id) + ".zip")
+        make_zip(filePath, fileDownloadPath + "learn" + str(learning_id) + ".zip")
         # 5. 返回zip
         response = make_response(
-            send_from_directory(fileDownloadPath, "learn" + str(learn_id) + ".zip", as_attachment=True))
+            send_from_directory(fileDownloadPath, "learn" + str(learning_id) + ".zip", as_attachment=True))
         return response
 
 
@@ -642,7 +641,7 @@ def SecetLearnInfo(id):
     dict["id"] = value.id
     dict["name"] = value.name
     dict["description"] = value.description
-    dict["paraseNum"] = parasnum
+    dict["praiseNum"] = parasnum
     dict["time"] = value.update_time.strftime("%Y/%m/%d")
     if value.image is not None and len(value.image) > 0:
         dict["image"] = json.loads(value.image)
@@ -667,7 +666,7 @@ def SecetLearnInfo(id):
             else:
                 tagName.append(lab.label)
     dict["tag"] = tagName
-    dict["barnd"] = brandName
+    dict["brand"] = brandName
     dict["category"] = categoryName
     # print(type(dict["ideaId"]),type(value.idea_id),"==================")
     IdeaData = []
@@ -697,7 +696,7 @@ def SecetLearnInfo(id):
                         else:
                             tagNamed.append(lab.label)
                 # dict["tag"] = tagName
-                ideaDict["barnd"] = brandNamed
+                ideaDict["brand"] = brandNamed
                 ideaDict["category"] = categoryNamed
                 ideaDict["tag"] = tagNamed
 

@@ -51,7 +51,9 @@ class AddMyIdea(Resource):
             session.add(new_learn_lable)
 
         session.commit()
-        return ApiResponse({"id": learning.id}, ResposeStatus.Success, "OK")
+        return ApiResponse({
+            "id": learning.id
+        }, ResposeStatus.Success, "OK")
 
 
 # 查询学习的所有数据
@@ -67,11 +69,11 @@ class GetAllIdea(Resource):
                                                                              Praise.type == "idea",
                                                                              Praise.is_give == 1).scalar()
             dict = {}
-            dict["paraseNum"] = parasnum
+            dict["praiseNum"] = parasnum
             dict["id"] = value.id
             dict["name"] = value.name
             dict["description"] = value.description
-            dict["time"] =value.update_time.strftime("%Y/%m/%d")
+            dict["time"] = value.update_time.strftime("%Y/%m/%d")
             dict["image"] = value.image
             dict["video"] = value.video
             labId = session.query(Idea_lab).filter(Idea_lab.idea_id == value.id).all()
@@ -89,14 +91,14 @@ class GetAllIdea(Resource):
                     else:
                         tagName.append(lab.label)
             # dict["tag"] = tagName
-            dict["barnd"] = brandName
+            dict["brand"] = brandName
             dict["category"] = categoryName
             data.append(dict)
         return ApiResponse(data, ResposeStatus.Success)
 
 
 # 根据tag,brand，category进行查询
-class SortSearchIdea(Resource):
+class SearchIdea(Resource):
     method_decorators = [jwt_required]
 
     def get(self):
@@ -124,9 +126,9 @@ class SortSearchIdea(Resource):
             countTotle = session.query(func.count(distinct(Idea.id))).scalar()
             dicts = {}
             if countTotle % size == 0:
-                dicts["TotleNum"] = int(countTotle / size)
+                dicts["totalNum"] = int(countTotle / size)
             else:
-                dicts["TotleNum"] = int(countTotle / size) + 1
+                dicts["totalNum"] = int(countTotle / size) + 1
             for value in student:
                 parasnum = session.query(func.count(distinct(Praise.id))).filter(Praise.work_id == value.id,
                                                                                  Praise.type == "idea",
@@ -135,10 +137,10 @@ class SortSearchIdea(Resource):
                 parise = Praise.query.filter(Praise.work_id == value.id, Praise.type == "idea",
                                              Praise.user_id == str(idd), Praise.is_give == 1).first()
                 if parise is not None:
-                    dict["isParise"] = 1
+                    dict["isPraise"] = 1
                 else:
-                    dict["isParise"] = 0
-                dict["paraseNum"] = parasnum
+                    dict["isPraise"] = 0
+                dict["praiseNum"] = parasnum
                 dict["id"] = value.id
                 dict["name"] = value.name
                 dict["description"] = value.description
@@ -166,7 +168,7 @@ class SortSearchIdea(Resource):
                         else:
                             tagName.append(lab.label)
                 # dict["tag"] = tagName
-                dict["barnd"] = brandName
+                dict["brand"] = brandName
                 dict["category"] = categoryName
                 data.append(dict)
             dicts["data"] = data
@@ -190,9 +192,9 @@ class SortSearchIdea(Resource):
             countTotle = session.query(func.count(distinct(Idea.id))).filter(Idea.id.in_(tagnum)).scalar()
             dicts = {}
             if countTotle % size == 0:
-                dicts["TotleNum"] = int(countTotle / size)
+                dicts["totalNum"] = int(countTotle / size)
             else:
-                dicts["TotleNum"] = int(countTotle / size) + 1
+                dicts["totalNum"] = int(countTotle / size) + 1
             if int(sortTime) == 0:
                 result_six = session.query(Idea).filter(Idea.id.in_(tagnum))
             else:
@@ -206,10 +208,10 @@ class SortSearchIdea(Resource):
                 parise = Praise.query.filter(Praise.work_id == val.id, Praise.type == "idea",
                                              Praise.user_id == str(idd), Praise.is_give == 1).first()
                 if parise is not None:
-                    dict["isParise"] = 1
+                    dict["isPraise"] = 1
                 else:
-                    dict["isParise"] = 0
-                dict["paraseNum"] = parasnum
+                    dict["isPraise"] = 0
+                dict["praiseNum"] = parasnum
                 dict["id"] = val.id
                 dict["name"] = val.name
                 dict["description"] = val.description
@@ -237,7 +239,7 @@ class SortSearchIdea(Resource):
                         else:
                             tagName.append(lab.label)
                 # dict["tag"] = tagName
-                dict["barnd"] = brandName
+                dict["brand"] = brandName
                 dict["category"] = categoryName
                 data.append(dict)
             dicts["data"] = data
@@ -279,7 +281,7 @@ class UpdataIdea(Resource):
 
 
 # 点赞
-class PraisesIdea(Resource):
+class PraiseIdea(Resource):
     method_decorators = [jwt_required]
 
     def post(self):
@@ -309,7 +311,7 @@ class PraisesIdea(Resource):
                 return ApiResponse("1", ResposeStatus.Success)
 
 
-class LikeSearchIdea(Resource):
+class SearchIdea__(Resource):
 
     def get(self):
         name = request.args.get("name")
@@ -362,12 +364,10 @@ class LikeSearchIdea(Resource):
         return ApiResponse(dicts, ResposeStatus.Success)
 
 
-class SeachOneIdea(Resource):
-    def get(self):
-        # SaveActiveAndIdea(19,"1","11")
-        id = request.args.get("id")
+class GetIdea(Resource):
+    def get(self, idea_id):
         session = db.session
-        value = session.query(Idea).filter(Idea.id == id).first()
+        value = session.query(Idea).filter(Idea.id == idea_id).first()
         parasnum = session.query(func.count(distinct(Praise.id))).filter(Praise.work_id == value.id,
                                                                          Praise.type == "idea",
                                                                          Praise.is_give == 1).scalar()
