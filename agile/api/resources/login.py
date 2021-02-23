@@ -1,3 +1,4 @@
+import logging
 import time
 import datetime
 
@@ -23,23 +24,32 @@ class GetHighLightDate(Resource):
     def get(self):
         try:
             # 1. 获取数据
-            date = request.args.get("date").split("-")
-            # 存取endTime对12进行特殊处理
-            if date[1] == "12":
-                end = datetime.datetime(year=int(date[0]) + 1, month=1, day=1)
-            else:
-                end = datetime.datetime(year=int(date[0]), month=int(date[1]) + 1, day=1)
+            setDay = "参数有误。 "
+            date = request.args.get("date")
+            date = date.split("-")
+            if date is not None or len(date) >= 2:
+                # print(date)
+                # 存取endTime对12进行特殊处理
+                logging.debug(date)
+                if date[0] is None or date[1] is None:
+                    return ApiResponse("date is faile!", ResposeStatus.Fail)
 
-            start = datetime.datetime(year=int(date[0]), month=int(date[1]), day=1)
-            # 查询在本月有多少条数据
-            data = db.session.query(Activities).filter(Activities.create_time >= start,
-                                                       Activities.create_time < end).all()
-            print(data)
-            setDay = set()
+                if date[1] == "12":
+                    end = datetime.datetime(year=int(date[0]) + 1, month=1, day=1)
+                else:
+                    end = datetime.datetime(year=int(date[0]), month=int(date[1]) + 1, day=1)
 
-            for i in data:
-                # 从日期中分割出月份并转成int存到set中去重
-                setDay.add(int(str(i.create_time).split("-")[2][0:2]))
+                start = datetime.datetime(year=int(date[0]), month=int(date[1]), day=1)
+                # 查询在本月有多少条数据
+                data = db.session.query(Activities).filter(Activities.create_time >= start,
+                                                           Activities.create_time < end).all()
+                # print(data)
+                setDay = set()
+
+                for i in data:
+                    # 从日期中分割出月份并转成int存到set中去重
+                    setDay.add(int(str(i.create_time).split("-")[2][0:2]))
+                    print(i)
 
             return ApiResponse(setDay, ResposeStatus.Success)
         except RuntimeError:
@@ -133,7 +143,7 @@ class GetSplitTotal(Resource):
 
 class GetCategory(Resource):
     """
-    获取本公司，本用户地区的learning下用户category和idea下用户category数量
+    获取本公司，本用户地区的category的数据
     Get
     请求参数：
     userId

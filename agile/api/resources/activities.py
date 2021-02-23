@@ -87,7 +87,7 @@ class ActivitiesList(Resource):
             paginate = Activities.query.filter(and_(*filterList)).paginate(args["page"], args["size"])
             return ApiResponse(obj={"activitiesData": datas, "total":paginate.pages},
                                status=ResposeStatus.Success, msg="OK")
-        except Exception as e:
+        except Exception:
             return ApiResponse(status=ResposeStatus.ParamFail, msg="参数错误!")
 
 def SelectLearnIdea(id):
@@ -280,8 +280,8 @@ class Download(Resource):
         object = Activities.query.filter(and_(Activities.id == activities_id, Activities.is_delete != 1)).first()
         if object is None:
             return ApiResponse(status=ResposeStatus.ParamFail, msg="No data for this activity！")
-        image, video, idea, learn = SelectLearnIdea(object.id)
-        create_workbook(object, filePath+"Active.xlsx", idea, learn)
+        image, video, _, _ = SelectLearnIdea(object.id)
+        create_workbook(object, filePath+"Activity.xlsx", activities_id)
         img = re.findall('GOTFL[^\"]*', str(image))
         vid = re.findall('GOTFL[^\"]*', str(video))
         # 3. 存储图片 存储视频
@@ -298,20 +298,47 @@ class Download(Resource):
             send_from_directory(fileDownloadPath, str(activities_id)+".zip", as_attachment=True))
         return response
 
-def create_workbook(object, filePath, idea, learn):
+def create_workbook(object, filePath, activities_id):
     # 创建Excel文件,不保存,直接输出
     workbook = xlsxwriter.Workbook(filePath)
     worksheet = workbook.add_worksheet("sheet")
-    title = ["Activity Types", "Activity Details", "Duration Hours", "With Whom",  "Description", "Learnings", "Ideas"]
+    title = ["Activity Types", "Activity Details", "Duration Hours",
+             "SelectOptions", "Level", "Age", "Gender", "LifeStage", "IncomeLevel", "Occupations",
+             "Area", "KidsType", "PetType",  "Activity Description",
+             "Learning Short Description", "Learning Details", "LearningTags", "Learning Category"]
     worksheet.write_row('A1', title)
+    selectOptions = ""
+    num = 2
+    activities = json.loads(object.active_object)
+    for Options in activities["location"]["selectOptions"]:
+        selectOptions += Options+","
+    LearnData = Learn.query.filter(and_(Learn.active_id == activities_id)).all()
+    for id in LearnData:
+        learnDescription = id.name
+        learnDetails = id.description
+        LearnInfo = SecetLearnInfo(id.id)
+        tag = ""
+        if LearnInfo['tag'] is not None:
+            for Learntag in LearnInfo['tag']:
+                tag += Learntag+","
+        worksheet.write_row('O' + str(num), [str(learnDescription), str(learnDetails),
+                                str(tag[0:-1]),
+                            str(LearnInfo['category'])])
+        num += 1
     worksheet.write_row('A2', [str(object.active),
                                str(object.active_type),
                                str(object.active_time),
-                               # TODO 解析object
-                               str(object.active_object),
-                               str(object.description),
-                               str(idea),
-                               str(learn)
+                               str(selectOptions[0:-1]),
+                               str(activities["location"]["level"]),
+                               str(activities["age"]),
+                               str(activities["gender"]),
+                               str(activities["lifeStage"]),
+                               str(activities["incomeLevel"]),
+                               str(activities["occupations"]),
+                               str(activities["area"]),
+                               str(activities["kidsType"]),
+                               str(activities["petType"]),
+                               str(object.description)
                                ])
     workbook.close()
 
@@ -319,7 +346,7 @@ def getFile(filePath, url, fileName):
     response = requests.get(url).content
     with open(filePath+fileName, 'wb') as f:
         f.write(response)
-    print ("Sucessful to download "+fileName)
+    print("Sucessful to download "+fileName)
 
 def make_zip(filePath, source_dir):
   zipf = zipfile.ZipFile(source_dir, 'w')
