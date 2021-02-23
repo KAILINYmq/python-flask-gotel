@@ -14,33 +14,42 @@ class TagList(Resource):
     def get(self):
         try:
             type = request.args.get("type")
+
             if type == "0":
                 allName = db.session.query(Type_table).all()
-                return ApiResponse([{"id": name.id,"tag": name.name, "new": getNewState(name.creat_time)} for name in allName],
-                                   ResposeStatus.Success)
+                return ApiResponse(
+                    [{"id": name.id, "tag": name.name, "new": getNewState(name.creat_time)} for name in allName],
+                    ResposeStatus.Success)
             elif type == "1":
                 allName = db.session.query(Details_table).all()
-                return ApiResponse([{"id": name.id,"tag": name.name, "new": getNewState(name.creat_time)} for name in allName],
-                                   ResposeStatus.Success)
+                return ApiResponse(
+                    [{"id": name.id, "tag": name.name, "new": getNewState(name.creat_time)} for name in allName],
+                    ResposeStatus.Success)
             elif type == "2":
-                allName = db.session.query(Tag).filter_by(label_type=type).all()
-                return ApiResponse([{"id": name.id,"tag": name.label, "new": getNewState(name.create_time)} for name in allName],
-                                   ResposeStatus.Success)
+                allName = db.session.query(Tag).filter_by(label_type="LearningsTags").all()
+                return ApiResponse(
+                    [{"id": name.id, "tag": name.label, "new": getNewState(name.create_time)} for name in allName],
+                    ResposeStatus.Success)
             elif type == "3":
-                allName = db.session.query(Tag).filter_by(label_type=type).all()
-                return ApiResponse([{"id": name.id,"tag": name.label, "new": getNewState(name.create_time)} for name in allName],
-                                   ResposeStatus.Success)
+                allName = db.session.query(Tag).filter_by(label_type="IdeaTags").all()
+                return ApiResponse(
+                    [{"id": name.id, "tag": name.label, "new": getNewState(name.create_time)} for name in allName],
+                    ResposeStatus.Success)
             elif type == "4":
-                allName = db.session.query(Tag).filter_by(label_type=type).all()
-                return ApiResponse([{"id": name.id,"tag": name.label, "new": getNewState(name.create_time)} for name in allName],
-                                   ResposeStatus.Success)
+                allName = db.session.query(Tag).filter_by(label_type="Brand").all()
+                return ApiResponse(
+                    [{"id": name.id, "tag": name.label, "new": getNewState(name.create_time)} for name in allName],
+                    ResposeStatus.Success)
             elif type == "5":
-                allName = db.session.query(Tag).filter_by(label_type=type).all()
-                return ApiResponse([{"id": name.id,"tag": name.label, "new": getNewState(name.create_time)} for name in allName],
-                                   ResposeStatus.Success)
+                allName = db.session.query(Tag).filter_by(label_type="Category").all()
+                return ApiResponse(
+                    [{"id": name.id, "tag": name.label, "new": getNewState(name.create_time)} for name in allName],
+                    ResposeStatus.Success)
 
         except RuntimeError:
             return ApiResponse("Search failed! Please try again.", ResposeStatus.Fail)
+        finally:
+            db.session.close()
 
 
 class AllTagList(Resource):
@@ -53,26 +62,34 @@ class AllTagList(Resource):
         try:
             result = {}
             allName = db.session.query(Type_table).all()
-            result["activityType"] = [{"id": name.id,"tag": name.name, "new": getNewState(name.creat_time)} for name in allName]
+            result["activityType"] = [{"id": name.id, "tag": name.name, "new": getNewState(name.creat_time)} for name in
+                                      allName]
 
             allName = db.session.query(Details_table).all()
-            result["activityDetails"] = [{"id": name.id,"tag": name.name, "new": getNewState(name.creat_time)} for name in allName]
+            result["activityDetails"] = [{"id": name.id, "tag": name.name, "new": getNewState(name.creat_time)} for name
+                                         in allName]
 
             allName = db.session.query(Tag).filter_by(label_type="LearningsTags").all()
-            result["learningsTags"] = [{"id": name.id,"tag": name.label, "new": getNewState(name.create_time)} for name in allName]
+            result["learningsTags"] = [{"id": name.id, "tag": name.label, "new": getNewState(name.create_time)} for name
+                                       in allName]
 
             allName = db.session.query(Tag).filter_by(label_type="IdeaTags").all()
-            result["ideaTags"] = [{"id": name.id,"tag": name.label, "new": getNewState(name.create_time)} for name in allName]
+            result["ideaTags"] = [{"id": name.id, "tag": name.label, "new": getNewState(name.create_time)} for name in
+                                  allName]
 
             allName = db.session.query(Tag).filter_by(label_type="Brand").all()
-            result["brand"] = [{"id": name.id,"tag": name.label, "new": getNewState(name.create_time)} for name in allName]
+            result["brand"] = [{"id": name.id, "tag": name.label, "new": getNewState(name.create_time)} for name in
+                               allName]
 
             allName = db.session.query(Tag).filter_by(label_type="Category").all()
-            result["category"] = [{"id": name.id,"tag": name.label, "new": getNewState(name.create_time)} for name in allName]
+            result["category"] = [{"id": name.id, "tag": name.label, "new": getNewState(name.create_time)} for name in
+                                  allName]
 
             return ApiResponse(result, ResposeStatus.Success)
         except RuntimeError:
             return ApiResponse("Search failed! Please try again.", ResposeStatus.Fail)
+        finally:
+            db.session.close()
 
 
 class InsertTag(Resource):
@@ -121,6 +138,8 @@ class InsertTag(Resource):
             return ApiResponse("Already insert tag", ResposeStatus.Success)
         except RuntimeError:
             return ApiResponse("Insert failed! Please try again.", ResposeStatus.Fail)
+        finally:
+            db.session.close()
 
 
 class Feedback(Resource):
@@ -176,6 +195,8 @@ class Feedback(Resource):
             return ApiResponse(result, ResposeStatus.Success)
         except RuntimeError:
             return ApiResponse("Search failed! Please try again.", ResposeStatus.Fail)
+        finally:
+            db.session.close()
 
     def put(self):
         """
@@ -193,6 +214,8 @@ class Feedback(Resource):
             return ApiResponse("Already update state to " + status, ResposeStatus.Success)
         except RuntimeError:
             return ApiResponse("Search failed! Please try again.", ResposeStatus.Fail)
+        finally:
+            db.session.close()
 
     def post(self):
         """
@@ -217,7 +240,8 @@ class Feedback(Resource):
             return ApiResponse("Already submit feedbook.", ResposeStatus.Success)
         except RuntimeError:
             return ApiResponse("Search failed! Please try again.", ResposeStatus.Fail)
-        pass
+        finally:
+            db.session.close()
 
 
 def timeConvert(startTime, endTime):
