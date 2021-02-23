@@ -9,7 +9,8 @@ from sqlalchemy import or_
 from agile.api.resources.tag import timeConvert
 from agile.commons.api_response import ApiResponse, ResposeStatus
 from agile.extensions import db
-from agile.models import Activities, Type_table, Learn, Idea, User, department_category, Category, Learn_lab, Tag
+from agile.models import Activities, Type_table, Learn, Idea, User, department_category, Category, Learn_lab, Tag, \
+    Idea_lab
 
 
 class GetHighLightDate(Resource):
@@ -248,6 +249,22 @@ class GetBrand(Resource):
             elif type == "idea":
                 for userId in tempSameCategoryUserId:
                     typeList.extend(db.session.query(Idea).filter_by(user_id=userId).all())
+                for tag in typeList:
+                    # print("当前的tag_id是：" + str(tag.id))
+                    # 获取到关联表中等于idea_id的data
+                    searchData.extend(db.session.query(Idea_lab).filter_by(idea_id=tag.id).all())
+                # print("筛选后的learn数据是：" + str(searchData) + "，数量是：" + str(len(searchData)))
+
+                for searchTag in searchData:
+                    tagType = db.session.query(Tag).filter_by(id=searchTag.tag_id).first_or_404()
+                    # print("当前tag_id是：" + str(searchTag.tag_id))
+                    # print("当前tag_id的brand是：" + str(tagType.label_type))
+                    if tagType.label_type == "Brand":
+                        if tagType.label in brandData:
+                            brandData[tagType.label] += 1
+                        else:
+                            brandData[tagType.label] = 1
+                # print("品牌数据是：" + str(brandData))
 
             # print("排序中")
             sortResult = sorted(brandData.items(), key=lambda x: x[1], reverse=True)
