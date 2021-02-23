@@ -29,6 +29,9 @@ class GetHighLightDate(Resource):
                 date = date.split("-")
                 print(date)
                 # 存取endTime对12进行特殊处理
+                if date[0] is None or date[1] is None:
+                    return ApiResponse("date is faile!", ResposeStatus.Fail)
+
                 if date[1] == "12":
                     end = datetime.datetime(year=int(date[0]) + 1, month=1, day=1)
                 else:
@@ -38,12 +41,13 @@ class GetHighLightDate(Resource):
                 # 查询在本月有多少条数据
                 data = db.session.query(Activities).filter(Activities.create_time >= start,
                                                            Activities.create_time < end).all()
-                print(data)
+                # print(data)
                 setDay = set()
 
                 for i in data:
                     # 从日期中分割出月份并转成int存到set中去重
                     setDay.add(int(str(i.create_time).split("-")[2][0:2]))
+                    print(i)
 
             return ApiResponse(setDay, ResposeStatus.Success)
         except RuntimeError:
