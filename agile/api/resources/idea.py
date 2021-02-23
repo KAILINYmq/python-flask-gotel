@@ -417,7 +417,6 @@ class GetIdea(Resource):
     def get(self, idea_id):
         session = db.session
         try:
-            # SaveActiveAndIdea(19, 4, "")
             value = session.query(Idea).filter(Idea.id == idea_id).first()
             parasnum = session.query(func.count(distinct(Praise.id))).filter(Praise.work_id == value.id,
                                                                              Praise.type == "idea",
@@ -503,6 +502,7 @@ class GetIdea(Resource):
 
 def SaveActiveAndIdea(userId, activeIds, datas):
         # shuju = '''{
+        #     "activityObject":"{"location":{"selectOptions":["11","1101","110101","110101001"],"level":"一线"},"age":"21-25","gender":0,"lifeStage":"Single/单身贵族","incomeLevel":"The Mid Class/小康家庭","occupations":"Students/学生","area":"","kidsType":"School Age/学龄","petType":"Cat/猫"}",
         #     "learnings": [{
         #     "name": "learning1 speak",
         #     "description": "learning spea",
@@ -532,10 +532,11 @@ def SaveActiveAndIdea(userId, activeIds, datas):
         #         ]
         #         }]
         #         }'''
-        #
+        # print(datas, type(datas))
         # aa =json.loads(shuju)
-        #
+
         # datas = aa
+        # print(datas,type(datas))
         session = db.session
         try:
             # activityObject
@@ -543,19 +544,21 @@ def SaveActiveAndIdea(userId, activeIds, datas):
             for lern in datas["learnings"]:
                 idealist = []
                 now = time.strftime('%Y-%m-%d', time.localtime(time.time()))
-
+                # print(datas["activityObject"], "=11====")
                 im = json.dumps(lern["imageUrls"])
                 vi = json.dumps(lern["videoUrls"])
+                # print(datas["activityObject"],"=====")
                 new_user = Learn(name=lern["name"], description=lern["description"], active_id=activeIds,
                                  image=im, video=vi, user_id=userId,activityObject=datas["activityObject"],creat_time=now,
                                  update_time=now)
                 session.add(new_user)
+                # print(datas["activityObject"], "11=====")
                 session.commit()
                 tag = lern["tags"]
                 learning = session.query(Learn).filter(Learn.id == new_user.id).first()
 
                 now = time.strftime('%Y-%m-%d', time.localtime(time.time()))
-                print(tag)
+                # print(tag)
                 for value in tag:
                     new_learn_lable = Learn_lab(idea_id=learning.id, tag_id=value, creat_time=now, update_time=now,
                                                 is_delete=0)
@@ -603,14 +606,12 @@ def SaveActiveAndIdea(userId, activeIds, datas):
                     session.add(new_learn_lable)
                     idealist.append(new_users.id)
                     session.commit()
-                print("------")
                 learninfo = session.query(Learn).filter(Learn.id == new_user.id).first()
                 learninfo.idea_id = str(idealist)
                 session.commit()
             return 1
         except:
             db.session.rollback()
-            print("==================")
             return 0
         finally:
             db.session.close()
@@ -629,7 +630,7 @@ class DownloadIdea(Resource):
         object = Idea.query.filter(and_(Idea.id == idea_id)).first()
         # image, video, idea, learn = SelectLearnIdea(object.id)
         # active ，查询idea
-        print(object.image, "==", type(object.image))
+        # print(object.image, "==", type(object.image))
         image = []
         video = []
         learning = Learn.query.filter(and_(Learn.id == object.learning_id)).first()
@@ -691,7 +692,7 @@ def getFile(filePath, url, fileName):
     response = requests.get(url).content
     with open(filePath + fileName, 'wb') as f:
         f.write(response)
-    print("Sucessful to download " + fileName)
+    # print("Sucessful to download " + fileName)
 
 
 def make_zip(filePath, source_dir):
