@@ -275,7 +275,7 @@ class GetBrand(Resource):
             for i in sortResult:
                 result[i[0]] = i[1]
             # print("最终结果：" + str(result))
-            return ApiResponse("he", ResposeStatus.Success)
+            return ApiResponse(result, ResposeStatus.Success)
         except RuntimeError:
             return ApiResponse("Search failed! Please try again.", ResposeStatus.Fail)
         finally:
