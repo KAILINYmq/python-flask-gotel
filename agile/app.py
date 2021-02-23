@@ -6,14 +6,8 @@ from agile.models import User
 from agile.database import BaseModel
 from flasgger import Swagger
 from agile.commons.audit import AuditTrail
-import contextlib
 
 audit = AuditTrail()
-
-@contextlib.contextmanager
-def session_removed():
-    db.session.remove()
-    yield
 
 def create_app(testing=False, cli=False):
     """Application factory, used to create application
