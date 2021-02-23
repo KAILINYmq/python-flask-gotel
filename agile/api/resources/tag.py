@@ -138,8 +138,6 @@ class InsertTag(Resource):
             return ApiResponse("Already insert tag", ResposeStatus.Success)
         except RuntimeError:
             return ApiResponse("Insert failed! Please try again.", ResposeStatus.Fail)
-        finally:
-            db.session.close()
 
 
 class Feedback(Resource):
@@ -195,8 +193,6 @@ class Feedback(Resource):
             return ApiResponse(result, ResposeStatus.Success)
         except RuntimeError:
             return ApiResponse("Search failed! Please try again.", ResposeStatus.Fail)
-        finally:
-            db.session.close()
 
     def put(self):
         """
@@ -214,8 +210,6 @@ class Feedback(Resource):
             return ApiResponse("Already update state to " + status, ResposeStatus.Success)
         except RuntimeError:
             return ApiResponse("Search failed! Please try again.", ResposeStatus.Fail)
-        finally:
-            db.session.close()
 
     def post(self):
         """
@@ -240,8 +234,6 @@ class Feedback(Resource):
             return ApiResponse("Already submit feedbook.", ResposeStatus.Success)
         except RuntimeError:
             return ApiResponse("Search failed! Please try again.", ResposeStatus.Fail)
-        finally:
-            db.session.close()
 
 
 def timeConvert(startTime, endTime):

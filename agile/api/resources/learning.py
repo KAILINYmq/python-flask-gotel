@@ -624,10 +624,10 @@ def SecetLearnInfo(id):
     dict = {}
     try:
         value = session.query(Learn).filter(Learn.id == id).first()
-
         parasnum = session.query(func.count(distinct(Praise.id))).filter(Praise.work_id == value.id,
                                                                          Praise.type == "learning",
                                                                          Praise.is_give == 1).scalar()
+
         dict["id"] = value.id
         dict["name"] = value.name
         dict["description"] = value.description
@@ -715,6 +715,4 @@ def SecetLearnInfo(id):
     except:
         db.session.rollback()
         return dict
-    finally:
-        db.session.close()
 
