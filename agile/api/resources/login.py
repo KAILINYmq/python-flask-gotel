@@ -1,3 +1,4 @@
+import logging
 import time
 import datetime
 
@@ -25,10 +26,11 @@ class GetHighLightDate(Resource):
             # 1. 获取数据
             setDay = "参数有误。 "
             date = request.args.get("date")
-            if date is not None:
-                date = date.split("-")
-                print(date)
+            date = date.split("-")
+            if date is not None or len(date) >= 2:
+                # print(date)
                 # 存取endTime对12进行特殊处理
+                logging.debug(date)
                 if date[0] is None or date[1] is None:
                     return ApiResponse("date is faile!", ResposeStatus.Fail)
 
