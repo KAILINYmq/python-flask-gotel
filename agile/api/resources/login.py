@@ -26,14 +26,15 @@ class GetHighLightDate(Resource):
             date = request.args.get("date").split("-")
             # 存取endTime对12进行特殊处理
             if date[1] == "12":
-                end = datetime(year=int(date[0]) + 1, month=1, day=1)
+                end = datetime.datetime(year=int(date[0]) + 1, month=1, day=1)
             else:
-                end = datetime(year=int(date[0]), month=int(date[1]) + 1, day=1)
+                end = datetime.datetime(year=int(date[0]), month=int(date[1]) + 1, day=1)
 
-            start = datetime(year=int(date[0]), month=int(date[1]), day=1)
+            start = datetime.datetime(year=int(date[0]), month=int(date[1]), day=1)
             # 查询在本月有多少条数据
             data = db.session.query(Activities).filter(Activities.create_time >= start,
                                                        Activities.create_time < end).all()
+            print(data)
             setDay = set()
 
             for i in data:
