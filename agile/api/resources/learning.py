@@ -110,7 +110,7 @@ class GetAllLearn(Resource):
                         IdeaData.append(ideaDict)
             dict["idea"] = IdeaData
             data.append(dict)
-        print(data)
+        # print(data)
         return ApiResponse(data, ResposeStatus.Success)
 
 
@@ -184,7 +184,7 @@ class SearchLearning(Resource):
                     dict["id"] = value.id
                     dict["name"] = value.name
                     dict["description"] = value.description
-                    dict["time"] = value.update_time
+                    dict["time"] = value.update_time.strftime("%Y/%m/%d")
                     if value.image is not None and len(value.image) > 0:
                         dict["image"] = json.loads(value.image)
                     else:
@@ -405,7 +405,7 @@ class Praises(Resource):
             # 点赞人id
             id = current_user.id
             # id=1
-            print(id, "================")
+            # print(id, "================")
             # learn
             learn = session.query(Praise).filter(Praise.user_id == id, Praise.work_id == data["id"],
                                                  Praise.type == "learning").first()
@@ -515,7 +515,7 @@ def intersect(nums1, nums2):
 class DownloadLearn(Resource):
     def get(self, learning_id):
         # 1.创建文件夹
-        print(type(learning_id))
+        # print(type(learning_id))
         path = PROJECT_ROOT + "/static/"
         fileDownloadPath = path.replace('\\', '/')
         filePath = fileDownloadPath + str("learn" + str(learning_id)) + "/"
@@ -587,7 +587,7 @@ def getFile(filePath, url, fileName):
     response = requests.get(url).content
     with open(filePath + fileName, 'wb') as f:
         f.write(response)
-    print("Sucessful to download " + fileName)
+    # print("Sucessful to download " + fileName)
 
 
 def make_zip(filePath, source_dir):
