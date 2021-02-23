@@ -54,8 +54,6 @@ class GetHighLightDate(Resource):
             return ApiResponse(setDay, ResposeStatus.Success)
         except RuntimeError:
             return ApiResponse("Search failed! Please try again.", ResposeStatus.Fail)
-        finally:
-            db.session.close()
 
 
 class GetAllTotal(Resource):
@@ -84,8 +82,6 @@ class GetAllTotal(Resource):
             return ApiResponse(result, ResposeStatus.Success)
         except RuntimeError:
             return ApiResponse("Search failed! Please try again.", ResposeStatus.Fail)
-        finally:
-            db.session.close()
 
 
 class GetSplitTotal(Resource):
@@ -137,8 +133,6 @@ class GetSplitTotal(Resource):
             return ApiResponse(result, ResposeStatus.Success)
         except RuntimeError:
             return ApiResponse("Search failed! Please try again.", ResposeStatus.Fail)
-        finally:
-            db.session.close()
 
 
 class GetCategory(Resource):
@@ -182,8 +176,6 @@ class GetCategory(Resource):
             return ApiResponse(result, ResposeStatus.Success)
         except RuntimeError:
             return ApiResponse("Search failed! Please try again.", ResposeStatus.Fail)
-        finally:
-            db.session.close()
 
 
 class GetBrand(Resource):
@@ -288,9 +280,6 @@ class GetBrand(Resource):
             return ApiResponse(result, ResposeStatus.Success)
         except RuntimeError:
             return ApiResponse("Search failed! Please try again.", ResposeStatus.Fail)
-        finally:
-            db.session.close()
-
 
 def splitTotal(dateType, data, tab):
     """
@@ -423,5 +412,3 @@ def getCategoryUserId(category,userCountry):
 
     except RuntimeError:
         return ApiResponse("Search failed! Please try again.", ResposeStatus.Fail)
-    finally:
-        db.session.close()
