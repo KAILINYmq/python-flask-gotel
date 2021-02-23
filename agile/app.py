@@ -14,7 +14,6 @@ def create_app(testing=False, cli=False):
     """Application factory, used to create application
     """
     app = Flask('agile')
-    CORS(app, supports_credentials=True)
     app.config.from_object('agile.config')
     app.config['debug'] = True
     # if testing is True:
