@@ -146,7 +146,7 @@ class MyProfileResource(Resource):
     responses = {
         200: {
             "description": "A list of colors (may be filtered by palette)",
-            "schema": UserSchema,
+            "schema": MeSchema,
         }
     }
 
@@ -158,11 +158,11 @@ class MyProfileResource(Resource):
             ["User"],
             None,
             "return user profile and authorizations",
-            UserSchema,
+            MeSchema,
         )
     )
     def get(self):
-        schema = UserSchema()
+        schema = MeSchema()
         return ApiResponse(schema.dump(current_user), ResposeStatus.Success)
 
 
