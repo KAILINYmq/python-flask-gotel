@@ -29,7 +29,7 @@ class GetHighLightDate(Resource):
                 date = date.split("-")
                 print(date)
                 # 存取endTime对12进行特殊处理
-                if date[1] is None or date[0] is None:
+                if date[0] is None or date[1] is None:
                     return ApiResponse("date is faile!", ResposeStatus.Fail)
 
                 if date[1] == "12":
