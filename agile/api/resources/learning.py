@@ -73,7 +73,7 @@ class GetAllLearn(Resource):
             dict["id"] = value.id
             dict["name"] = value.name
             dict["description"] = value.description
-            dict["time"] = value.update_time
+            dict["time"] = value.update_time.strftime("%Y/%m/%d")
             dict["image"] = value.image
             dict["video"] = value.video
             labId = session.query(Learn_lab).filter(Learn_lab.idea_id == value.id).all()
@@ -104,7 +104,7 @@ class GetAllLearn(Resource):
                         ideaDict["id"] = idea.id
                         ideaDict["name"] = idea.name
                         ideaDict["description"] = idea.description
-                        ideaDict["time"] = idea.update_time
+                        ideaDict["time"] = idea.update_time.strftime("%Y/%m/%d")
                         ideaDict["image"] = idea.image
                         ideaDict["video"] = idea.video
                         IdeaData.append(ideaDict)
@@ -200,7 +200,7 @@ class SortSearch(Resource):
                             ideaDict["id"] = idea.id
                             ideaDict["name"] = idea.name
                             ideaDict["description"] = idea.description
-                            ideaDict["time"] = idea.update_time
+                            ideaDict["time"] = idea.update_time.strftime("%Y/%m/%d")
                             if idea.image is not None and len(idea.image) > 0:
                                 ideaDict["image"] = json.loads(idea.image)
                             else:
@@ -258,7 +258,7 @@ class SortSearch(Resource):
                 dict["id"] = val.id
                 dict["name"] = val.name
                 dict["description"] = val.description
-                dict["time"] = val.creat_time
+                dict["time"] = val.update_time.strftime("%Y/%m/%d")
                 if val.image is not None and len(val.image) > 0:
                     dict["image"] = json.loads(val.image)
                 else:
@@ -294,7 +294,7 @@ class SortSearch(Resource):
                             ideaDict["id"] = idea.id
                             ideaDict["name"] = idea.name
                             ideaDict["description"] = idea.description
-                            ideaDict["time"] = idea.update_time
+                            ideaDict["time"] = idea.update_time.strftime("%Y/%m/%d")
                             if idea.image is not None and len(idea.image) > 0:
                                 ideaDict["image"] = json.loads(idea.image)
                             else:
@@ -405,7 +405,7 @@ class LikeSearchLearn(Resource):
             dict["id"] = value.id
             dict["name"] = value.name
             dict["description"] = value.description
-            dict["time"] = value.update_time
+            dict["time"] = value.update_time.strftime("%Y/%m/%d")
             dict["image"] = value.image
             dict["video"] = value.video
             labId = session.query(Learn_lab).filter(Learn_lab.idea_id == value.id).all()
@@ -436,7 +436,7 @@ class LikeSearchLearn(Resource):
                         ideaDict["id"] = idea.id
                         ideaDict["name"] = idea.name
                         ideaDict["description"] = idea.description
-                        ideaDict["time"] = idea.update_time
+                        ideaDict["time"] = idea.update_time.strftime("%Y/%m/%d")
                         ideaDict["image"] = idea.image
                         ideaDict["video"] = idea.video
                         IdeaData.append(ideaDict)
@@ -643,7 +643,7 @@ def SecetLearnInfo(id):
     dict["name"] = value.name
     dict["description"] = value.description
     dict["paraseNum"] = parasnum
-    dict["time"] = value.update_time
+    dict["time"] = value.update_time.strftime("%Y/%m/%d")
     if value.image is not None and len(value.image) > 0:
         dict["image"] = json.loads(value.image)
     else:
@@ -680,7 +680,7 @@ def SecetLearnInfo(id):
                 ideaDict["id"] = idea.id
                 ideaDict["name"] = idea.name
                 ideaDict["description"] = idea.description
-                ideaDict["time"] = idea.update_time
+                ideaDict["time"] = idea.update_time.strftime("%Y/%m/%d")
 
                 labId = session.query(Idea_lab).filter(Idea_lab.idea_id == idea.id).all()
                 tagNamed = []

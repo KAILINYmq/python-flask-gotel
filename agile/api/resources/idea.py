@@ -5,7 +5,7 @@ import shutil
 import time
 import xlsxwriter
 import zipfile
-
+import datetime
 from flask import request, make_response, send_from_directory
 from flask_jwt_extended import current_user
 from flask_jwt_extended import jwt_required
@@ -23,6 +23,7 @@ from agile.models import Idea, Idea_lab, Tag, Praise, Learn, Activities, Learn_l
 # 新增学习
 class AddMyIdea(Resource):
     def post(self):
+
         now = time.strftime('%Y-%m-%d', time.localtime(time.time()))
         data = json.loads(request.get_data(as_text=True))
         session = db.session
@@ -70,7 +71,7 @@ class GetAllIdea(Resource):
             dict["id"] = value.id
             dict["name"] = value.name
             dict["description"] = value.description
-            dict["time"] = value.update_time
+            dict["time"] =value.update_time.strftime("%Y/%m/%d")
             dict["image"] = value.image
             dict["video"] = value.video
             labId = session.query(Idea_lab).filter(Idea_lab.idea_id == value.id).all()
@@ -141,7 +142,7 @@ class SortSearchIdea(Resource):
                 dict["id"] = value.id
                 dict["name"] = value.name
                 dict["description"] = value.description
-                dict["time"] = value.update_time
+                dict["time"] = value.update_time.strftime("%Y/%m/%d")
                 if value.image is not None and len(value.image) > 0:
                     dict["image"] = json.loads(value.image)
                 else:
@@ -212,7 +213,7 @@ class SortSearchIdea(Resource):
                 dict["id"] = val.id
                 dict["name"] = val.name
                 dict["description"] = val.description
-                dict["time"] = val.creat_time
+                dict["time"] = val.update_time.strftime("%Y/%m/%d")
                 if val.image is not None and len(val.image) > 0:
                     dict["image"] = json.loads(val.image)
                 else:
@@ -335,7 +336,7 @@ class LikeSearchIdea(Resource):
             dict["id"] = value.id
             dict["name"] = value.name
             dict["description"] = value.description
-            dict["time"] = value.update_time
+            dict["time"] = value.update_time.strftime("%Y/%m/%d")
             dict["image"] = value.image
             dict["video"] = value.video
             labId = session.query(Idea_lab).filter(Idea_lab.idea_id == value.id).all()
@@ -363,7 +364,7 @@ class LikeSearchIdea(Resource):
 
 class SeachOneIdea(Resource):
     def get(self):
-        # SaveActiveAndIdea(2,"1")
+        # SaveActiveAndIdea(19,"1","11")
         id = request.args.get("id")
         session = db.session
         value = session.query(Idea).filter(Idea.id == id).first()
@@ -375,7 +376,7 @@ class SeachOneIdea(Resource):
         dict["id"] = value.id
         dict["name"] = value.name
         dict["description"] = value.description
-        dict["time"] = value.update_time
+        dict["time"] = value.update_time.strftime("%Y/%m/%d")
         if value.image is not None and len(value.image) > 0:
             dict["image"] = json.loads(value.image)
         else:
@@ -432,12 +433,13 @@ class SeachOneIdea(Resource):
             learndict["video"] = json.loads(value.video)
         else:
             learndict["video"] = []
-        learndict["time"] = learn.update_time
+        learndict["time"] = learn.update_time.strftime("%Y/%m/%d")
         dict["learning"] = learndict
         active = session.query(Activities).filter(Activities.id == learn.active_id).first()
         activedict = {}
         activedict["name"] = active.active
         activedict["activeType"] = active.active_type
+        # print(active.active_time)
         activedict["activeTime"] = active.active_time
         activedict["description"] = active.description
         # activedict["image"] = active.image
@@ -451,33 +453,33 @@ def SaveActiveAndIdea(userId, activeIds, datas):
     #     "learnings": [{
     #     "name": "你dawd34向ddeqewewewewewe我",
     #     "description": "分割开始，走电工的阿萨",
-    #     "tags": [1,2],
-    #     "brands": [1,2],
-    #     "category": [1,2],
+    #     "tags": [28,25],
+    #     "brands": [25,28],
+    #     "category": 25,
     #     "imageUrls": ["dddd","dddddawd"],
     #     "videoUrls": ["wdawdad","Dawdawdad"],
     #     "ideas": [{
-    #             "name": "344wweqewedddeqwewd我",
+    #             "name": "344wweqewdeqwewd我",
     #             "description": "你说队列",
-    #             "tags": [1,2],
-    #             "brands": [1,2],
-    #             "category": [1,2],
+    #             "tags": [25],
+    #             "brands": [26],
+    #             "category": 25,
     #             "imageUrls": ["安徽嗲文化","dawdawd"],
     #             "videoUrls": ["dawdadad","dawdad"]
     #         },
     #         {
-    # 		"name": "非deqwdddewweqeqeeaeeqw想你",
+    # 		"name": "非deqwdddeeqeqeeaeeqw想你",
     # 		"description": "zouzai1dhawdj1",
-    # 		"tags": [1,2],
-    # 		"brands": [1,2],
-    # 		"category": [1,2],
+    # 		"tags": [25],
+    # 		"brands": [26],
+    # 		"category": 27,
     # 		"imageUrls": ["whdauwdj","dawdjawdil"],
     # 		"videoUrls": ["dawidjawdi","dadawd"]
     # 	        }
     #         ]
     #         }]
     #         }'''
-
+    #
     # aa =json.loads(shuju)
     #
     # datas = aa
@@ -490,9 +492,11 @@ def SaveActiveAndIdea(userId, activeIds, datas):
         # if student:
         #     return ApiResponse("", ResposeStatus.Fail, "该名字已经存在")
         # user =Learn.session.filter(func.lower(User.email) == func.lower(email))
-        print(lern["imageUrls"], )
+
+        im = json.dumps(lern["imageUrls"])
+        vi = json.dumps(lern["videoUrls"])
         new_user = Learn(name=lern["name"], description=lern["description"], active_id=activeIds,
-                         image=str(lern["imageUrls"]), video=str(lern["videoUrls"]), user_id=userId, creat_time=now,
+                         image=im, video=vi, user_id=userId, creat_time=now,
                          update_time=now)
         session.add(new_user)
         session.commit()
@@ -526,8 +530,10 @@ def SaveActiveAndIdea(userId, activeIds, datas):
             # student = session.query(Idea).filter(Idea.name == idea["name"]).first()
             # if student:
             #     return ApiResponse("", ResposeStatus.Fail, "该名字已经存在")
+            ims = json.dumps(idea["imageUrls"])
+            vis = json.dumps(idea["videoUrls"])
             new_users = Idea(name=idea["name"], description=idea["description"], user_id=userId,
-                             image=str(idea["imageUrls"]), video=str(idea["videoUrls"]), learning_id=new_user.id,
+                             image=ims, video=vis, learning_id=new_user.id,
                              creat_time=now, update_time=now)
             session.add(new_users)
             session.commit()
