@@ -78,7 +78,7 @@ class MeSchema(ma.ModelSchema):
     department = fields.Nested(DepartmentSchema, dump_only=True)
     role = ma.Function(lambda obj: obj.role.name)
     permissions = ma.Function(lambda obj: obj.role.authorized_permissions())
-    statistics = ma.Method("dump_statistics")
+    # statistics = ma.Method("dump_statistics")
     created_by = ma.Function(
         lambda obj: obj.created_by.username if obj.created_by else "", dump_only=True
     )
