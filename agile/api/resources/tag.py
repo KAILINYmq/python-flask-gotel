@@ -69,11 +69,11 @@ class AllTagList(Resource):
             result["activityDetails"] = [{"id": name.id, "tag": name.name, "new": getNewState(name.creat_time)} for name
                                          in allName]
 
-            allName = db.session.query(Tag).filter_by(label_type="LearningsTags").all()
+            allName = db.session.query(Tag).filter_by(label_type="Learnings").all()
             result["learningsTags"] = [{"id": name.id, "tag": name.label, "new": getNewState(name.create_time)} for name
                                        in allName]
 
-            allName = db.session.query(Tag).filter_by(label_type="IdeaTags").all()
+            allName = db.session.query(Tag).filter_by(label_type="Idea").all()
             result["ideaTags"] = [{"id": name.id, "tag": name.label, "new": getNewState(name.create_time)} for name in
                                   allName]
 
