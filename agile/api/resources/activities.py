@@ -145,8 +145,8 @@ class ActivitiesAdd(Resource):
             # 新增
             try:
                 activities = Activities(active=args['activityTypes'], active_type=args['activityDetails'],
-                                        active_time=args['durationHours'], active_object=args['activityObject'],
-                                        description=args['activityDescription'], user_id = current_user.id, is_delete = 0)
+                                        active_time=args['durationHours'], active_object=str(args['activityObject']),
+                                        description=args['activityDescription'], user_id=current_user.id, is_delete=0)
                 db.session.add(activities)
                 db.session.commit()
                 if SaveActiveAndIdea(current_user.id, activities.id, args) == 1:
@@ -157,64 +157,6 @@ class ActivitiesAdd(Resource):
             except Exception as e:
                 db.session.rollback()
                 return ApiResponse(status=ResposeStatus.ParamFail, msg="Add failed！")
-    # def put(self):
-    #     # 修改活动
-    #     parser = reqparse.RequestParser()
-    #     parser.add_argument('id', type=int, required=True, help="id cannot be blank!")
-    #     parser.add_argument('status', type=int, required=True, help="status cannot be blank!")
-    #     args = parser.parse_args()
-    #     if args['status'] == 1:
-    #         parser.add_argument('active', required=True, help="active cannot be blank!")
-    #         parser.add_argument('active_type', required=True, help="active_type cannot be blank!")
-    #         parser.add_argument('active_time', type=int, required=True, help="active_time cannot be blank!")
-    #         parser.add_argument('active_object', required=True, help="active_object cannot be blank!")
-    #         parser.add_argument('description', required=True, help="description cannot be blank!")
-    #         args = parser.parse_args()
-    #
-    #         # 2. 存储数据
-    #         try:
-    #             active = Activities.query.filter_by(id=args['id']).first()
-    #             active.active = args['active']
-    #             active.active_type = args['active_type']
-    #             active.active_time = args['active_time']
-    #             active.active_object = args['active_object']
-    #             active.description = args['description']
-    #             active.status = 0
-    #             db.session.commit()
-    #             return ApiResponse(obj=json.dumps({"id": active.id}), status=ResposeStatus.Success, msg="OK")
-    #         except Exception:
-    #             return ApiResponse(status=ResposeStatus.ParamFail, msg="Add failed！")
-    #     if args['status'] == 2:
-    #         parser.add_argument('idea_name', required=True, help="idea_name cannot be blank!")
-    #         parser.add_argument('learn_name', required=True, help="learn_name cannot be blank!")
-    #         args = parser.parse_args()
-    #
-    #         # 2. 存储数据
-    #         try:
-    #             active = Activities.query.filter_by(id=args['id']).first()
-    #             active.idea_name = args['idea_name']
-    #             active.learn_name = args['learn_name']
-    #             active.status = 0
-    #             db.session.commit()
-    #             return ApiResponse(obj=json.dumps({"id": active.id}), status=ResposeStatus.Success, msg="OK")
-    #         except Exception:
-    #             return ApiResponse(status=ResposeStatus.ParamFail, msg="Add failed！")
-    #     if args['status'] == 3:
-    #         parser.add_argument('image', required=True, help="image cannot be blank!")
-    #         parser.add_argument('video', required=True, help="video cannot be blank!")
-    #         args = parser.parse_args()
-    #
-    #         # 2. 存储数据
-    #         try:
-    #             active = Activities.query.filter_by(id=args['id']).first()
-    #             active.image = args['image']
-    #             active.video = args['video']
-    #             active.status = 0
-    #             db.session.commit()
-    #             return ApiResponse(obj=json.dumps({"id": active.id}), status=ResposeStatus.Success, msg="OK")
-    #         except Exception:
-    #             return ApiResponse(status=ResposeStatus.ParamFail, msg="Add failed！")
-    #     return ApiResponse(status=ResposeStatus.ParamFail, msg="参数错误！")
 
 class SingleActivities(Resource):
     def get(self, activities_id):

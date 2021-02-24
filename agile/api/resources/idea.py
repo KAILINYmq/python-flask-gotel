@@ -287,8 +287,6 @@ class SearchIdea(Resource):
                 return ApiResponse(dicts, ResposeStatus.Success)
         except:
             db.session.rollback()
-        finally:
-            db.session.close()
 
 
 # 修改
@@ -356,8 +354,6 @@ class PraiseIdea(Resource):
                     return ApiResponse("1", ResposeStatus.Success)
         except:
             db.session.rollback()
-        finally:
-            db.session.close()
 
 
 class SearchIdea__(Resource):
@@ -530,47 +526,9 @@ class GetIdea(Resource):
             return ApiResponse(dict, ResposeStatus.Success)
         except:
             db.session.rollback()
-        finally:
-            db.session.close()
 
-
+# TODO
 def SaveActiveAndIdea(userId, activeIds, datas):
-        # shuju = '''{
-        #     "activityObject":"{"location":{"selectOptions":["11","1101","110101","110101001"],"level":"一线"},"age":"21-25","gender":0,"lifeStage":"Single/单身贵族","incomeLevel":"The Mid Class/小康家庭","occupations":"Students/学生","area":"","kidsType":"School Age/学龄","petType":"Cat/猫"}",
-        #     "learnings": [{
-        #     "name": "learning1 speak",
-        #     "description": "learning spea",
-        #     "tags": [28,25],
-        #     "brands": [25,28],
-        #     "category": 25,
-        #     "imageUrls": ["dddd","dddddawd"],
-        #     "videoUrls": ["wdawdad","Dawdawdad"],
-        #     "ideas": [{
-        #             "name": "344wwddeqewdeqwewd我",
-        #             "description": "你说队列",
-        #             "tags": [25],
-        #             "brands": [26],
-        #             "category": 25,
-        #             "imageUrls": ["安徽嗲d文化","dawddawd"],
-        #             "videoUrls": ["dawdaddad","dawddad"]
-        #         },
-        #         {
-        #         "name": "非deqwdddedeqeqeeaeeqw想你",
-        #         "description": "zouzdai1dhawdj1",
-        #         "tags": [25],
-        #         "brands": [26],
-        #         "category": 27,
-        #         "imageUrls": ["whddauwdj","dawddjawdil"],
-        #         "videoUrls": ["dawiddjawdi","daddawd"]
-        #             }
-        #         ]
-        #         }]
-        #         }'''
-        # print(datas, type(datas))
-        # aa =json.loads(shuju)
-
-        # datas = aa
-        # print(datas,type(datas))
         session = db.session
         try:
             # activityObject
@@ -583,7 +541,7 @@ def SaveActiveAndIdea(userId, activeIds, datas):
                     vi = json.dumps(lern["videoUrls"])
                     # print(datas["activityObject"],"=====")
                     new_user = Learn(name=lern["name"], description=lern["description"], active_id=activeIds,
-                                     image=im, video=vi, user_id=userId,activityObject=datas["activityObject"],creat_time=now,
+                                     image=im, video=vi, user_id=userId,activityObject=str(datas["activityObject"]),creat_time=now,
                                      update_time=now)
                     session.add(new_user)
                     # print(datas["activityObject"], "11=====")
@@ -618,7 +576,7 @@ def SaveActiveAndIdea(userId, activeIds, datas):
                             ims = json.dumps(idea["imageUrls"])
                             vis = json.dumps(idea["videoUrls"])
                             new_users = Idea(name=idea["name"], description=idea["description"], user_id=userId,
-                                             image=ims, video=vis, learning_id=new_user.id,activityObject=datas["activityObject"],
+                                             image=ims, video=vis, learning_id=new_user.id,activityObject=str(datas["activityObject"]),
                                              creat_time=now, update_time=now)
                             session.add(new_users)
                             session.commit()
@@ -648,8 +606,6 @@ def SaveActiveAndIdea(userId, activeIds, datas):
         except:
             db.session.rollback()
             return 0
-        finally:
-            db.session.close()
 
 
 class DownloadIdea(Resource):

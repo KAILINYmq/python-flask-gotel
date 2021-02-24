@@ -25,4 +25,4 @@ class Idea(db.Model):
     # 用户id
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
-    activityObject = db.Column(db.String(255))
+    activityObject = db.Column(db.String(364))
