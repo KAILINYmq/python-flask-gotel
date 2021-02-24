@@ -125,7 +125,7 @@ class SearchIdea(Resource):
                             if country in ide.activityObject:
                                 ideaTotle.append(ide)
                 else:
-                    student = session.query(Idea).limit(size).offset((page - 1) * size).all()
+                    student = session.query(Idea).order_by(Idea.update_time.asc()).limit(size).offset((page - 1) * size).all()
                     for ide in student:
                         if str(country) =="0":
                             ideaTotle.append(ide)
@@ -435,6 +435,21 @@ class GetIdea(Resource):
                 dict["video"] = json.loads(value.video)
             else:
                 dict["video"] = []
+            img =[]
+            vio =[]
+            try:
+                if dict["image"] is not None and len(dict["image"]) > 0:
+                    for i in dict["image"]:
+                        img.append(s3file.DEFAULT_BUCKET.generate_presigned_url(obj_key=i))
+                if dict["video"] is not None and len(dict["video"]) > 0:
+                    for i in dict["video"]:
+                        vio.append(s3file.DEFAULT_BUCKET.generate_presigned_url(obj_key=i))
+            except:
+                dict["image"] = []
+                dict["video"] = []
+            dict["image"] = img
+            dict["video"] = vio
+
             labId = session.query(Idea_lab).filter(Idea_lab.idea_id == value.id).all()
             tagName = []
             brandName = []
@@ -444,8 +459,10 @@ class GetIdea(Resource):
                 for lab in labIds:
                     if lab.label_type == "Brand":
                         brandName.append(lab.label)
+                        tagName.append(lab.label)
                     elif lab.label_type == "Category":
                         categoryName = lab.label
+                        tagName.append(lab.label)
                     else:
                         tagName.append(lab.label)
             # dict["tag"] = tagName
@@ -467,21 +484,38 @@ class GetIdea(Resource):
                 for lab in labIdss:
                     if lab.label_type == "Brand":
                         brandNamed.append(lab.label)
+                        tagNamed.append(lab.label)
                     elif lab.label_type == "Category":
                         categoryNamed = lab.label
+                        tagNamed.append(lab.label)
                     else:
                         tagNamed.append(lab.label)
             learndict["tag"] = tagNamed
             learndict["barnd"] = brandNamed
             learndict["category"] = categoryNamed
             if learn.image is not None and len(learn.image) > 0:
-                dict["image"] = json.loads(value.image)
+                learndict["image"] = json.loads(value.image)
             else:
-                dict["image"] = []
+                learndict["image"] = []
             if learn.video is not None and len(learn.video) > 0:
                 learndict["video"] = json.loads(value.video)
             else:
                 learndict["video"] = []
+            img = []
+            vio = []
+            try:
+                if learndict["image"] is not None and len(learndict["image"]) > 0:
+                    for i in learndict["image"]:
+                        img.append(s3file.DEFAULT_BUCKET.generate_presigned_url(obj_key=i))
+                if learndict["video"] is not None and len(learndict["video"]) > 0:
+                    for i in learndict["video"]:
+                        vio.append(s3file.DEFAULT_BUCKET.generate_presigned_url(obj_key=i))
+            except:
+                learndict["image"] = []
+                learndict["video"] = []
+            learndict["image"] = img
+            learndict["video"] = vio
+
             learndict["time"] = learn.update_time.strftime("%Y/%m/%d")
             dict["learning"] = learndict
             active = session.query(Activities).filter(Activities.id == learn.active_id).first()
@@ -540,75 +574,76 @@ def SaveActiveAndIdea(userId, activeIds, datas):
         session = db.session
         try:
             # activityObject
-
-            for lern in datas["learnings"]:
-                idealist = []
-                now = time.strftime('%Y-%m-%d', time.localtime(time.time()))
-                # print(datas["activityObject"], "=11====")
-                im = json.dumps(lern["imageUrls"])
-                vi = json.dumps(lern["videoUrls"])
-                # print(datas["activityObject"],"=====")
-                new_user = Learn(name=lern["name"], description=lern["description"], active_id=activeIds,
-                                 image=im, video=vi, user_id=userId,activityObject=datas["activityObject"],creat_time=now,
-                                 update_time=now)
-                session.add(new_user)
-                # print(datas["activityObject"], "11=====")
-                session.commit()
-                tag = lern["tags"]
-                learning = session.query(Learn).filter(Learn.id == new_user.id).first()
-
-                now = time.strftime('%Y-%m-%d', time.localtime(time.time()))
-                # print(tag)
-                for value in tag:
-                    new_learn_lable = Learn_lab(idea_id=learning.id, tag_id=value, creat_time=now, update_time=now,
-                                                is_delete=0)
-                    session.add(new_learn_lable)
-                    session.commit()
-                for value in lern["brands"]:
-                    new_learn_lable = Learn_lab(idea_id=learning.id, tag_id=value, creat_time=now, update_time=now,
-                                                is_delete=0)
-                    session.add(new_learn_lable)
-                    session.commit()
-                # for value in lern["category"]:
-                new_learn_lable = Learn_lab(idea_id=learning.id, tag_id=lern["category"], creat_time=now, update_time=now,
-                                            is_delete=0)
-                session.add(new_learn_lable)
-                session.commit()
-                for idea in lern["ideas"]:
-                    # now = time.strftime('%Y-%m-%d', time.localtime(time.time()))
-                    # data = json.loads(request.get_data(as_text=True))
-                    # student = session.query(Idea).filter(Idea.name == idea["name"]).first()
-                    # if student:
-                    #     return ApiResponse("", ResposeStatus.Fail, "该名字已经存在")
-                    ims = json.dumps(idea["imageUrls"])
-                    vis = json.dumps(idea["videoUrls"])
-                    new_users = Idea(name=idea["name"], description=idea["description"], user_id=userId,
-                                     image=ims, video=vis, learning_id=new_user.id,activityObject=datas["activityObject"],
-                                     creat_time=now, update_time=now)
-                    session.add(new_users)
-                    session.commit()
-                    tag = idea["tags"]
-                    learning = session.query(Idea).filter(Idea.id == new_users.id).first()
+            if len(datas["learnings"])>0:
+                for lern in datas["learnings"]:
+                    idealist = []
                     now = time.strftime('%Y-%m-%d', time.localtime(time.time()))
-                    for value in tag:
-                        new_learn_lable = Idea_lab(idea_id=learning.id, tag_id=value, creat_time=now, update_time=now,
-                                                   is_delete=0)
-                        session.add(new_learn_lable)
-
-                    for value in idea["brands"]:
-                        new_learn_lable = Idea_lab(idea_id=learning.id, tag_id=value, creat_time=now, update_time=now,
-                                                   is_delete=0)
-                        session.add(new_learn_lable)
-
-                    # for value in idea["category"]:
-                    new_learn_lable = Idea_lab(idea_id=learning.id, tag_id=idea["category"], creat_time=now, update_time=now,
-                                               is_delete=0)
-                    session.add(new_learn_lable)
-                    idealist.append(new_users.id)
+                    # print(datas["activityObject"], "=11====")
+                    im = json.dumps(lern["imageUrls"])
+                    vi = json.dumps(lern["videoUrls"])
+                    # print(datas["activityObject"],"=====")
+                    new_user = Learn(name=lern["name"], description=lern["description"], active_id=activeIds,
+                                     image=im, video=vi, user_id=userId,activityObject=datas["activityObject"],creat_time=now,
+                                     update_time=now)
+                    session.add(new_user)
+                    # print(datas["activityObject"], "11=====")
                     session.commit()
-                learninfo = session.query(Learn).filter(Learn.id == new_user.id).first()
-                learninfo.idea_id = str(idealist)
-                session.commit()
+                    tag = lern["tags"]
+                    learning = session.query(Learn).filter(Learn.id == new_user.id).first()
+
+                    now = time.strftime('%Y-%m-%d', time.localtime(time.time()))
+                    # print(tag)
+                    for value in tag:
+                        new_learn_lable = Learn_lab(idea_id=learning.id, tag_id=value, creat_time=now, update_time=now,
+                                                    is_delete=0)
+                        session.add(new_learn_lable)
+                        session.commit()
+                    for value in lern["brands"]:
+                        new_learn_lable = Learn_lab(idea_id=learning.id, tag_id=value, creat_time=now, update_time=now,
+                                                    is_delete=0)
+                        session.add(new_learn_lable)
+                        session.commit()
+                    # for value in lern["category"]:
+                    new_learn_lable = Learn_lab(idea_id=learning.id, tag_id=lern["category"], creat_time=now, update_time=now,
+                                                is_delete=0)
+                    session.add(new_learn_lable)
+                    session.commit()
+                    if len(lern["ideas"]) > 0:
+                        for idea in lern["ideas"]:
+                            # now = time.strftime('%Y-%m-%d', time.localtime(time.time()))
+                            # data = json.loads(request.get_data(as_text=True))
+                            # student = session.query(Idea).filter(Idea.name == idea["name"]).first()
+                            # if student:
+                            #     return ApiResponse("", ResposeStatus.Fail, "该名字已经存在")
+                            ims = json.dumps(idea["imageUrls"])
+                            vis = json.dumps(idea["videoUrls"])
+                            new_users = Idea(name=idea["name"], description=idea["description"], user_id=userId,
+                                             image=ims, video=vis, learning_id=new_user.id,activityObject=datas["activityObject"],
+                                             creat_time=now, update_time=now)
+                            session.add(new_users)
+                            session.commit()
+                            tag = idea["tags"]
+                            learning = session.query(Idea).filter(Idea.id == new_users.id).first()
+                            now = time.strftime('%Y-%m-%d', time.localtime(time.time()))
+                            for value in tag:
+                                new_learn_lable = Idea_lab(idea_id=learning.id, tag_id=value, creat_time=now, update_time=now,
+                                                           is_delete=0)
+                                session.add(new_learn_lable)
+
+                            for value in idea["brands"]:
+                                new_learn_lable = Idea_lab(idea_id=learning.id, tag_id=value, creat_time=now, update_time=now,
+                                                           is_delete=0)
+                                session.add(new_learn_lable)
+
+                            # for value in idea["category"]:
+                            new_learn_lable = Idea_lab(idea_id=learning.id, tag_id=idea["category"], creat_time=now, update_time=now,
+                                                       is_delete=0)
+                            session.add(new_learn_lable)
+                            idealist.append(new_users.id)
+                            session.commit()
+                    learninfo = session.query(Learn).filter(Learn.id == new_user.id).first()
+                    learninfo.idea_id = str(idealist)
+                    session.commit()
             return 1
         except:
             db.session.rollback()
