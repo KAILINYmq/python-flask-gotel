@@ -48,8 +48,6 @@ class TagList(Resource):
 
         except RuntimeError:
             return ApiResponse("Search failed! Please try again.", ResposeStatus.Fail)
-        finally:
-            db.session.close()
 
 
 class AllTagList(Resource):
@@ -88,8 +86,6 @@ class AllTagList(Resource):
             return ApiResponse(result, ResposeStatus.Success)
         except RuntimeError:
             return ApiResponse("Search failed! Please try again.", ResposeStatus.Fail)
-        finally:
-            db.session.close()
 
 
 class InsertTag(Resource):
@@ -137,6 +133,7 @@ class InsertTag(Resource):
                 db.session.commit()
             return ApiResponse("Already insert tag", ResposeStatus.Success)
         except RuntimeError:
+            db.session.rollback()
             return ApiResponse("Insert failed! Please try again.", ResposeStatus.Fail)
 
 
@@ -184,7 +181,8 @@ class Feedback(Resource):
                         Guestbook.time.between(timeList[0], timeList[1])).filter_by(user_id=userId).all()
 
             for i in data:
-                temp = {"id": i.id, "type": i.type, "description": i.description, "time": str(i.time).split(" ")[0], "state": i.state,
+                temp = {"id": i.id, "type": i.type, "description": i.description, "time": str(i.time).split(" ")[0],
+                        "state": i.state,
                         "userId": i.user_id}
                 feedbackData.append(temp)
 
@@ -203,12 +201,12 @@ class Feedback(Resource):
         try:
             id = request.args.get("id")
             status = request.args.get("status")
-            session = db.session
-            data = session.query(Guestbook).filter_by(id=id).first_or_404()
+            data = db.session.query(Guestbook).filter_by(id=id).first_or_404()
             data.state = status
-            session.commit()
+            db.session.commit()
             return ApiResponse("Already update state to " + status, ResposeStatus.Success)
         except RuntimeError:
+            db.session.rollback()
             return ApiResponse("Search failed! Please try again.", ResposeStatus.Fail)
 
     def post(self):
@@ -233,6 +231,7 @@ class Feedback(Resource):
             db.session.commit()
             return ApiResponse("Already submit feedbook.", ResposeStatus.Success)
         except RuntimeError:
+            db.session.rollback()
             return ApiResponse("Search failed! Please try again.", ResposeStatus.Fail)
 
 
