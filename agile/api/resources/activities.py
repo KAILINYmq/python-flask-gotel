@@ -54,6 +54,8 @@ class ActivitiesList(Resource):
             idea = args.get("idea")
             startTime = args.get("startTime")
             endTime = args.get("endTime")
+            page = args.get("page")
+            size = args.get("size")
             if name == "All":
                 name = ""
             if _type == "All":
@@ -62,6 +64,12 @@ class ActivitiesList(Resource):
                 learn = ""
             if idea == "All":
                 idea = ""
+            if not page:
+                page = 1
+            if not size:
+                size = 10
+            page = int(page)
+            size = int(size)
 
             if name:
                 filterList.append(Activities.active == name)
@@ -83,8 +91,7 @@ class ActivitiesList(Resource):
                 filterList.append(Activities.idea_name.like('%' + learn + '%'))
             if idea:
                 filterList.append(Activities.learn_name.like('%' + idea + '%'))
-            object = Activities.query.filter(and_(*filterList)).offset((args["page"] - 1) * args["size"]).limit(
-                args["size"])
+            object = Activities.query.filter(and_(*filterList)).offset((page - 1) * size).limit(size)
             datas = []
             for k in object:
                 data = {}
@@ -105,7 +112,7 @@ class ActivitiesList(Resource):
                         data["video"].append(s3file.DEFAULT_BUCKET.generate_presigned_url(obj_key=v))
                 data["createTime"] = str(k.create_time).split(" ")[0]
                 datas.append(data)
-            paginate = Activities.query.filter(and_(*filterList)).paginate(args["page"], args["size"])
+            paginate = Activities.query.filter(and_(*filterList)).paginate(page, size)
             return ApiResponse(obj={
                 "activitiesData": datas,
                 "total"         : paginate.pages
