@@ -19,7 +19,7 @@ from flask_jwt_extended import current_user, jwt_required
 class ActivitiesSchema(ma.ModelSchema):
     class Meta:
         include_fk = False
-        fields = ("id", "active", "active_type", "active_time", "active_object", "idea_name", "learn_name", "description", "image", "video", "status")
+        fields = ("id", "active", "active_type", "active_time", "active_object", "description", "image", "video", "status")
         model = Activities
         sqla_session = db.session
 
@@ -27,7 +27,7 @@ class ActivitiesSchema(ma.ModelSchema):
 class ActivitiesSchemas(ma.ModelSchema):
     class Meta:
         include_fk = False
-        fields = ("id", "active", "description", "image", "video", "learn_name", "idea_name", "active_type", "create_time")
+        fields = ("id", "active", "description", "image", "video", "active_type", "create_time")
         model = Activities
         sqla_session = db.session
 
@@ -40,45 +40,62 @@ class ActivitiesSchemaTypes(ma.ModelSchema):
         sqla_session = db.session
 
 class ActivitiesList(Resource):
-    def post(self):
+    def has_tag(self,tag_set,tag):
+        if not tag:
+            return True
+        for tag0 in tag_set:
+            if tag in tag0:
+                return True
+        return False
+
+    def get(self):
         # 查询活动数据
         # 1.获取参数
-        try:
-            args = json.loads(request.get_data(as_text=True))
-        except Exception as e:
-            return ApiResponse(status=ResposeStatus.ParamFail, msg="参数错误!")
-
+        args = request.args
         # 2. 查询参数
         filterList = []
         filterList.append(Activities.is_delete != 1)
         try:
-            if args["name"] is "All":
-                args["name"] = ""
-            if args["type"] is "All":
-                args["type"] = ""
-            if args["learn"] is "All":
-                args["learn"] = ""
-            if args["idea"] is "All":
-                args["idea"] = ""
+            name = args.get("name")
+            _type = args.get("type")
+            learn = args.get("learn")
+            idea = args.get("idea")
+            startTime = args.get("startTime")
+            endTime = args.get("endTime")
+            page = args.get("page")
+            size = args.get("size")
+            if name == "All":
+                name = ""
+            if _type == "All":
+                _type = ""
+            if learn == "All":
+                learn = ""
+            if idea == "All":
+                idea = ""
+            if not page:
+                page = 1
+            if not size:
+                size = 10
+            page = int(page)
+            size = int(size)
 
-            if args["name"] is not "":
-                filterList.append(Activities.active == args["name"])
-            if args["type"] is not "":
-                filterList.append(Activities.active_type == args["type"])
-            if args["startTime"] and args["endTime"] is not None:
-                if args["startTime"] == args["endTime"]:
-                    end = args["startTime"].split(" ")[0] + ' 23:59:59'
-                    print( datetime.strptime(end, '%Y-%m-%d  %H:%M:%S'))
-                    filterList.append(Activities.create_time >= datetime.strptime(args["startTime"], '%Y-%m-%d  %H:%M:%S'))
+            if name:
+                filterList.append(Activities.active == name)
+            if _type:
+                filterList.append(Activities.active_type == _type)
+            if startTime and endTime:
+                if startTime == endTime:
+                    end = startTime.split(" ")[0] + ' 23:59:59'
+                    print(datetime.strptime(end, '%Y-%m-%d  %H:%M:%S'))
+                    filterList.append(
+                        Activities.create_time >= datetime.strptime(startTime, '%Y-%m-%d  %H:%M:%S'))
                     filterList.append(Activities.create_time < datetime.strptime(end, '%Y-%m-%d  %H:%M:%S'))
                 else:
-                    filterList.append(Activities.create_time >= datetime.strptime(args["startTime"], '%Y-%m-%d  %H:%M:%S'))
-                    filterList.append(Activities.create_time <= datetime.strptime(args["endTime"], '%Y-%m-%d  %H:%M:%S'))
-            if args["learn"] is not "":
-                filterList.append(Activities.idea_name.like('%'+args["learn"]+'%'))
-            if args["idea"] is not "":
-                filterList.append(Activities.learn_name.like('%'+args["idea"]+'%'))
-            object = Activities.query.filter(and_(*filterList)).offset((args["page"]-1) * args["size"]).limit(args["size"])
+                    filterList.append(
+                        Activities.create_time >= datetime.strptime(startTime, '%Y-%m-%d  %H:%M:%S'))
+                    filterList.append(
+                        Activities.create_time <= datetime.strptime(endTime, '%Y-%m-%d  %H:%M:%S'))
+            object = Activities.query.filter(and_(*filterList)).offset((page - 1) * size).limit(size)
             datas = []
             for k in object:
                 data = {}
@@ -89,6 +106,8 @@ class ActivitiesList(Resource):
                 data["activeType"] = k.active_type
                 data["description"] = k.description
                 image, video, data["ideaTags"], data["learnTags"] = SelectLearnIdea(k.id)
+                if not self.has_tag(data['ideaTags'],idea) or not self.has_tag(data['learnTags'],learn):
+                    continue
                 img = re.findall('GOTFL[^\"]*', str(image))
                 vid = re.findall('GOTFL[^\"]*', str(video))
                 if img is not None:
@@ -99,9 +118,12 @@ class ActivitiesList(Resource):
                         data["video"].append(s3file.DEFAULT_BUCKET.generate_presigned_url(obj_key=v))
                 data["createTime"] = str(k.create_time).split(" ")[0]
                 datas.append(data)
-            paginate = Activities.query.filter(and_(*filterList)).paginate(args["page"], args["size"])
-            return ApiResponse(obj={"activitiesData": datas, "total":paginate.pages},
-                               status=ResposeStatus.Success, msg="OK")
+            paginate = Activities.query.filter(and_(*filterList)).paginate(page, size)
+            return ApiResponse(obj={
+                "activitiesData": datas,
+                "total"         : paginate.pages
+            },
+                status=ResposeStatus.Success, msg="OK")
         except Exception as e:
             print(e)
             return ApiResponse(status=ResposeStatus.ParamFail, msg="参数错误!")
