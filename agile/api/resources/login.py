@@ -27,7 +27,8 @@ class GetHighLightDate(Resource):
             setDay = "参数有误。 "
             date = request.args.get("date")
             date = date.split("-")
-            if date is not None or len(date) >= 2:
+
+            if date is not None and len(date) >= 2:
                 # print(date)
                 # 存取endTime对12进行特殊处理
                 logging.debug(date)

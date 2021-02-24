@@ -7,6 +7,20 @@ from agile.extensions import db
 from datetime import date, datetime
 import time
 
+# 把type信息封装到一个dict里
+typeDict = {
+    "0": [Type_table],
+    "1": [Details_table],
+    "2": [Tag, "Learnings"],
+    "3": [Tag, "Idea"],
+    "4": [Tag, "Brand"],
+    "5": [Tag, "Category"],
+}
+tagTypeDict = {
+    "0": "ActivityType",
+    "1": "ActivityDetails",
+}
+
 
 class TagList(Resource):
     """Get the type list"""
@@ -14,38 +28,8 @@ class TagList(Resource):
     def get(self):
         try:
             type = request.args.get("type")
-
-            if type == "0":
-                allName = db.session.query(Type_table).all()
-                return ApiResponse(
-                    [{"id": name.id, "tag": name.name, "new": getNewState(name.creat_time)} for name in allName],
-                    ResposeStatus.Success)
-            elif type == "1":
-                allName = db.session.query(Details_table).all()
-                return ApiResponse(
-                    [{"id": name.id, "tag": name.name, "new": getNewState(name.creat_time)} for name in allName],
-                    ResposeStatus.Success)
-            elif type == "2":
-                allName = db.session.query(Tag).filter_by(label_type="LearningsTags").all()
-                return ApiResponse(
-                    [{"id": name.id, "tag": name.label, "new": getNewState(name.create_time)} for name in allName],
-                    ResposeStatus.Success)
-            elif type == "3":
-                allName = db.session.query(Tag).filter_by(label_type="IdeaTags").all()
-                return ApiResponse(
-                    [{"id": name.id, "tag": name.label, "new": getNewState(name.create_time)} for name in allName],
-                    ResposeStatus.Success)
-            elif type == "4":
-                allName = db.session.query(Tag).filter_by(label_type="Brand").all()
-                return ApiResponse(
-                    [{"id": name.id, "tag": name.label, "new": getNewState(name.create_time)} for name in allName],
-                    ResposeStatus.Success)
-            elif type == "5":
-                allName = db.session.query(Tag).filter_by(label_type="Category").all()
-                return ApiResponse(
-                    [{"id": name.id, "tag": name.label, "new": getNewState(name.create_time)} for name in allName],
-                    ResposeStatus.Success)
-
+            result = getTagList(typeDict[type])
+            return ApiResponse(result, ResposeStatus.Success)
         except RuntimeError:
             return ApiResponse("Search failed! Please try again.", ResposeStatus.Fail)
 
@@ -58,31 +42,9 @@ class AllTagList(Resource):
 
     def get(self):
         try:
-            result = {}
-            allName = db.session.query(Type_table).all()
-            result["activityType"] = [{"id": name.id, "tag": name.name, "new": getNewState(name.creat_time)} for name in
-                                      allName]
-
-            allName = db.session.query(Details_table).all()
-            result["activityDetails"] = [{"id": name.id, "tag": name.name, "new": getNewState(name.creat_time)} for name
-                                         in allName]
-
-            allName = db.session.query(Tag).filter_by(label_type="Learnings").all()
-            result["learningsTags"] = [{"id": name.id, "tag": name.label, "new": getNewState(name.create_time)} for name
-                                       in allName]
-
-            allName = db.session.query(Tag).filter_by(label_type="Idea").all()
-            result["ideaTags"] = [{"id": name.id, "tag": name.label, "new": getNewState(name.create_time)} for name in
-                                  allName]
-
-            allName = db.session.query(Tag).filter_by(label_type="Brand").all()
-            result["brand"] = [{"id": name.id, "tag": name.label, "new": getNewState(name.create_time)} for name in
-                               allName]
-
-            allName = db.session.query(Tag).filter_by(label_type="Category").all()
-            result["category"] = [{"id": name.id, "tag": name.label, "new": getNewState(name.create_time)} for name in
-                                  allName]
-
+            result = {"activityType": getTagList(typeDict["0"]), "activityDetails": getTagList(typeDict["1"]),
+                      "learningsTags": getTagList(typeDict["2"]), "ideaTags": getTagList(typeDict["3"]),
+                      "brand": getTagList(typeDict["4"]), "category": getTagList(typeDict["5"])}
             return ApiResponse(result, ResposeStatus.Success)
         except RuntimeError:
             return ApiResponse("Search failed! Please try again.", ResposeStatus.Fail)
@@ -143,6 +105,8 @@ class Feedback(Resource):
     status: 0: 通过， 1: get 未通过， 2: get 未审批， 3: get all
     startTime:Year-month-day
     endTime:Year-month-day
+    page: 第几页
+    size: 每页几条数据
     """
 
     def get(self):
@@ -152,6 +116,9 @@ class Feedback(Resource):
             startTime = request.args.get("startTime")
             endTime = request.args.get("endTime")
             userId = request.args.get("userId")
+            page = request.args.get("page")
+            size = request.args.get("size")
+
             if status is None:
                 status = "3"
 
@@ -161,11 +128,17 @@ class Feedback(Resource):
             if endTime is None:
                 endTime = time.strftime("%Y-%m-%d", time.localtime())
 
+            if page is None or size is None or int(page) <= 0 or int(size) <= 0:
+                return ApiResponse("page or size parm have mistake.", ResposeStatus.Fail)
+
+            size = int(size)
+            page = int(page)
+
             # 2. 通过参数来查询数据并返回
             timeList = timeConvert(startTime, endTime)
             result = {}
             feedbackData = []
-
+            # 如果没有传用户id，就获取所有的反馈信息，如果传了，就只获取属于这个用户的所有反馈信息
             if userId is None:
                 if status == "3":
                     data = db.session.query(Guestbook).filter(Guestbook.time.between(timeList[0], timeList[1])).all()
@@ -179,15 +152,32 @@ class Feedback(Resource):
                 else:
                     data = db.session.query(Guestbook).filter_by(state=status).filter(
                         Guestbook.time.between(timeList[0], timeList[1])).filter_by(user_id=userId).all()
-
+            count = 0
+            countPage = 1
             for i in data:
-                temp = {"id": i.id, "type": i.type, "description": i.description, "time": str(i.time).split(" ")[0],
-                        "state": i.state,
-                        "userId": i.user_id}
-                feedbackData.append(temp)
+                if countPage == page:
+                    temp = {"id": i.id, "type": i.type, "description": i.description, "time": str(i.time).split(" ")[0],
+                            "state": i.state,
+                            "userId": i.user_id}
+                    feedbackData.append(temp)
+
+                count += 1
+                if count % size == 0:
+                    countPage += 1
 
             result["feedbackData"] = feedbackData
-            result["total"] = len(data)
+
+            if feedbackData is None:
+                # 返回总页数
+                result["total"] = 0
+            else:
+                # 返回总页数
+                size = int(size)
+                if len(data) % size == 0:
+                    result["total"] = len(data) // size
+                else:
+                    result["total"] = len(data) // size + 1
+
             return ApiResponse(result, ResposeStatus.Success)
         except RuntimeError:
             return ApiResponse("Search failed! Please try again.", ResposeStatus.Fail)
@@ -259,3 +249,26 @@ def getNewState(startTime):
         return "0"
 
     return "1"
+
+
+def getTagList(tableData):
+    """
+    tableData:封装的信息，如果是前两个，只有表信息就够了，后四个需要给一个brand名字，所以是一个list
+        typeDict = {
+        "0": [Type_table],
+        "1": [Details_table],
+        "2": [Tag,"LearningsTags"],
+        "3": [Tag,"IdeaTags"],
+        "4": [Tag,"Brand"],
+        "5": [Tag,"Category"],
+    }
+    """
+
+    if len(tableData) == 1:
+        allName = db.session.query(tableData[0]).all()
+        result = [{"id": name.id, "tag": name.name, "new": getNewState(name.creat_time)} for name in allName]
+    elif len(tableData) == 2:
+        allName = db.session.query(tableData[0]).filter_by(label_type=tableData[1]).all()
+        result = [{"id": name.id, "tag": name.label, "new": getNewState(name.create_time)} for name in allName]
+
+    return result
