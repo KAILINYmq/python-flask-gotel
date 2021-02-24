@@ -25,8 +25,7 @@ class GetHighLightDate(Resource):
         try:
             # 1. 获取数据
             setDay = "参数有误。 "
-            date = request.args.get("date")
-            date = date.split("-")
+            date = request.args.get("date").split("-")
 
             if date is not None and len(date) >= 2:
                 # print(date)
@@ -50,7 +49,7 @@ class GetHighLightDate(Resource):
                 for i in data:
                     # 从日期中分割出月份并转成int存到set中去重
                     setDay.add(int(str(i.create_time).split("-")[2][0:2]))
-                    print(i)
+                    # print(i)
 
             return ApiResponse(setDay, ResposeStatus.Success)
         except RuntimeError:
@@ -158,7 +157,7 @@ class GetCategory(Resource):
             # print("所有的category：" + str(db.session.query(Category).all()))
             for category in db.session.query(Category).all():
                 # 获取所有属于本category的同地区的用户id
-                tempSameCategoryUserId = getCategoryUserId(category,userCountry)
+                tempSameCategoryUserId = getCategoryUserId(category, userCountry)
 
                 # 拿着这个user id去learning表查询所有涉及到这些user id的数据
                 count = 0
@@ -204,7 +203,7 @@ class GetBrand(Resource):
                 category = "all"
                 # print("category是：" + category)
                 # print("进入函数")
-                tempSameCategoryUserId = getCategoryUserId(category,userCountry)
+                tempSameCategoryUserId = getCategoryUserId(category, userCountry)
                 # print("退出函数")
             else:
                 tempCategory = db.session.query(Category).filter_by(name=category).first()
@@ -213,7 +212,7 @@ class GetBrand(Resource):
                 # print("获取到的category是：" + str(tempCategory))
                 # print("获取到的category数量是：" + str(len(tempCategoryList)))
                 if len(tempCategoryList) == 0:
-                    return ApiResponse("Don't find the category name.",ResposeStatus.Fail)
+                    return ApiResponse("Don't find the category name.", ResposeStatus.Fail)
                 else:
                     # print("进入函数")
                     # 获取所有属于本category的同地区的用户id
@@ -282,6 +281,7 @@ class GetBrand(Resource):
         except RuntimeError:
             return ApiResponse("Search failed! Please try again.", ResposeStatus.Fail)
 
+
 def splitTotal(dateType, data, tab):
     """
     dateType: 0 —— Month .  1 —— Week
@@ -290,8 +290,8 @@ def splitTotal(dateType, data, tab):
     """
 
     result = {}
-    monthList = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sept","Oct","Nov","Dec"]
-    weekList = ["oneWeek","twoWeek","threeWeek","fourWeek","fiveWeek","sixWeek"]
+    monthList = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"]
+    weekList = ["oneWeek", "twoWeek", "threeWeek", "fourWeek", "fiveWeek", "sixWeek"]
     if dateType == "0":
         # 对data数据进行筛选往前倒6周的数据，并且对每一周的数量进行记录
         frontTime = datetime.date.today()
@@ -365,7 +365,7 @@ def splitTotalCompany(dateType, data, tab):
     return result
 
 
-def getCategoryUserId(category,userCountry):
+def getCategoryUserId(category, userCountry):
     """
     获取所有属于category的同地区的人员id list
     category:各category类型，或者all

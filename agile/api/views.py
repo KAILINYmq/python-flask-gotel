@@ -38,7 +38,7 @@ api.add_resource(ActivitiesAdd, "/activities")
 # 查询单个活动、删除活动
 api.add_resource(SingleActivities, "/activities/<int:activities_id>")
 # Activity
-api.add_resource(Activity, "/activities/activity")
+api.add_resource(ActivityTypes, "/activities/activityTypes")
 # Download
 api.add_resource(Download, "/activities/download/<int:activities_id>")
 

@@ -248,7 +248,7 @@ class SingleActivities(Resource):
             return ApiResponse(status=ResposeStatus.Success, msg="OK")
         return ApiResponse(status=ResposeStatus.Success, msg="OK")
 
-class Activity(Resource):
+class ActivityTypes(Resource):
     def get(self):
         datas = []
         schema = ActivitiesSchemaTypes()
