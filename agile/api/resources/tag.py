@@ -9,16 +9,12 @@ import time
 
 # 把type信息封装到一个dict里
 typeDict = {
-    "0": [Type_table],
-    "1": [Details_table],
+    "0": [Type_table, "ActivityType"],
+    "1": [Details_table, "ActivityDetails"],
     "2": [Tag, "Learnings"],
     "3": [Tag, "Idea"],
     "4": [Tag, "Brand"],
-    "5": [Tag, "Category"],
-}
-tagTypeDict = {
-    "0": "ActivityType",
-    "1": "ActivityDetails",
+    "5": [Tag, "Category"]
 }
 
 
@@ -64,7 +60,15 @@ class InsertTag(Resource):
             # 获取当前的时间
             localtime = time.strftime("%Y-%m-%d", time.localtime())
             data = json.loads(request.get_data(as_text=True))
-            if data["tagType"] == "ActivityDetails":
+            print(data)
+            if data["tagType"] == typeDict["0"][1]:
+                typeTab = Type_table()
+                typeTab.name = data["name"]
+                typeTab.creat_time = localtime
+                typeTab.duration_hours = int(data["durationHours"])
+                db.session.add(typeTab)
+                db.session.commit()
+            elif data["tagType"] == typeDict["1"][1]:
                 detailsTab = Details_table()
                 detailsTab.name = data["name"]
                 type = db.session.query(Type_table).filter_by(name=data["activityType"]).first_or_404()
@@ -72,27 +76,14 @@ class InsertTag(Resource):
                 detailsTab.creat_time = localtime
                 db.session.add(detailsTab)
                 db.session.commit()
-            elif data["tagType"] == "ActivityType":
-                typeTab = Type_table()
-                typeTab.name = data["name"]
-                typeTab.creat_time = localtime
-                typeTab.duration_hours = int(data["durationHours"])
-                db.session.add(typeTab)
-                db.session.commit()
             else:
                 tagTab = Tag()
                 tagTab.label = data["name"]
-                if data["tagType"] == "Learnings":
-                    tagTab.label_type = "Learnings"
-                elif data["tagType"] == "Brand":
-                    tagTab.label_type = "Brand"
-                elif data["tagType"] == "Idea":
-                    tagTab.label_type = "Idea"
-                elif data["tagType"] == "Category":
-                    tagTab.label_type = "Category"
+                tagTab.label_type = data["tagType"]
                 tagTab.create_time = localtime
                 db.session.add(tagTab)
                 db.session.commit()
+
             return ApiResponse("Already insert tag", ResposeStatus.Success)
         except RuntimeError:
             db.session.rollback()
@@ -119,6 +110,7 @@ class Feedback(Resource):
             page = request.args.get("page")
             size = request.args.get("size")
 
+            # 校验参数
             if status is None:
                 status = "3"
 
@@ -134,7 +126,7 @@ class Feedback(Resource):
             size = int(size)
             page = int(page)
 
-            # 2. 通过参数来查询数据并返回
+            # 通过参数来查询数据并返回
             timeList = timeConvert(startTime, endTime)
             result = {}
             feedbackData = []
@@ -152,6 +144,7 @@ class Feedback(Resource):
                 else:
                     data = db.session.query(Guestbook).filter_by(state=status).filter(
                         Guestbook.time.between(timeList[0], timeList[1])).filter_by(user_id=userId).all()
+            # 对数据进行处理，只保留分页需要的数据
             count = 0
             countPage = 1
             for i in data:
@@ -167,16 +160,11 @@ class Feedback(Resource):
 
             result["feedbackData"] = feedbackData
 
-            if feedbackData is None:
-                # 返回总页数
-                result["total"] = 0
+            size = int(size)
+            if len(data) % size == 0:
+                result["total"] = len(data) // size
             else:
-                # 返回总页数
-                size = int(size)
-                if len(data) % size == 0:
-                    result["total"] = len(data) // size
-                else:
-                    result["total"] = len(data) // size + 1
+                result["total"] = len(data) // size + 1
 
             return ApiResponse(result, ResposeStatus.Success)
         except RuntimeError:
@@ -213,10 +201,8 @@ class Feedback(Resource):
             guestbookTab.type = type
             guestbookTab.description = description
             guestbookTab.user_id = userId
-
             guestbookTab.state = "0"
             guestbookTab.time = time.strftime("%Y-%m-%d", time.localtime())
-
             db.session.add(guestbookTab)
             db.session.commit()
             return ApiResponse("Already submit feedbook.", ResposeStatus.Success)
@@ -255,8 +241,8 @@ def getTagList(tableData):
     """
     tableData:封装的信息，如果是前两个，只有表信息就够了，后四个需要给一个brand名字，所以是一个list
         typeDict = {
-        "0": [Type_table],
-        "1": [Details_table],
+        "0": [Type_table,"ActivityType"],
+        "1": [Details_table,ActivityDetails],
         "2": [Tag,"LearningsTags"],
         "3": [Tag,"IdeaTags"],
         "4": [Tag,"Brand"],
@@ -264,10 +250,10 @@ def getTagList(tableData):
     }
     """
 
-    if len(tableData) == 1:
+    if tableData[1] == "ActivityType" or tableData[1] == "ActivityDetails":
         allName = db.session.query(tableData[0]).all()
         result = [{"id": name.id, "tag": name.name, "new": getNewState(name.creat_time)} for name in allName]
-    elif len(tableData) == 2:
+    else:
         allName = db.session.query(tableData[0]).filter_by(label_type=tableData[1]).all()
         result = [{"id": name.id, "tag": name.label, "new": getNewState(name.create_time)} for name in allName]
 
