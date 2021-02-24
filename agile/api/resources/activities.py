@@ -223,11 +223,11 @@ class SingleActivities(Resource):
         if object is None:
             return ApiResponse(status=ResposeStatus.ParamFail, msg="No data for this activity！")
         data = {}
-        data["name"] = object.active
-        data["type"] = object.active_type
-        data["activeTime"] = object.active_time
-        data["activeObject"] = object.active_object
-        data["description"] = object.description
+        data["activityTypes"] = object.active
+        data["activityDetails"] = object.active_type
+        data["durationHours"] = object.active_time
+        data["activityObject"] = object.active_object
+        data["activityDescription"] = object.description
         data["learnings"] = []
         LearnData = Learn.query.filter(and_(Learn.active_id == activities_id)).all()
         for l in LearnData:

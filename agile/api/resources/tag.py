@@ -14,11 +14,7 @@ typeDict = {
     "2": [Tag, "Learnings"],
     "3": [Tag, "Idea"],
     "4": [Tag, "Brand"],
-    "5": [Tag, "Category"],
-}
-tagTypeDict = {
-    "0": "ActivityType",
-    "1": "ActivityDetails",
+    "5": [Tag, "Category"]
 }
 
 
@@ -255,8 +251,8 @@ def getTagList(tableData):
     """
     tableData:封装的信息，如果是前两个，只有表信息就够了，后四个需要给一个brand名字，所以是一个list
         typeDict = {
-        "0": [Type_table],
-        "1": [Details_table],
+        "0": [Type_table,],
+        "1": [Details_table,],
         "2": [Tag,"LearningsTags"],
         "3": [Tag,"IdeaTags"],
         "4": [Tag,"Brand"],
