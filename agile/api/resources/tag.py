@@ -21,14 +21,14 @@ typeDict = {
 class TagList(Resource):
     """Get the type list"""
 
-    def post(self):
+    def get(self):
         try:
-            data = json.loads(request.get_data(as_text=True))
-            type = data["type"]
+            type = request.args.get("type")
             result = getTagList(typeDict[type])
             return ApiResponse(result, ResposeStatus.Success)
         except RuntimeError:
             return ApiResponse("Search failed! Please try again.", ResposeStatus.Fail)
+
 
 class AllTagList(Resource):
     """
@@ -219,7 +219,6 @@ def timeConvert(startTime, endTime):
     end = datetime(year=int(endTime[0]), month=int(endTime[1]), day=int(endTime[2]))
     result = [start, end]
     return result
-
 
 
 def getNewState(startTime):
