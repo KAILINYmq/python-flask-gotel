@@ -206,7 +206,6 @@ class SearchIdea(Resource):
                 categoryList = session.query(Idea_lab).filter(Idea_lab.tag_id == category).all()
                 for val in categoryList:
                     tagnum.append(val.idea_id)
-
                 dicts = {}
                 result_six = []
                 if int(sortTime) == 0:
