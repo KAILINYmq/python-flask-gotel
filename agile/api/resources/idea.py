@@ -18,6 +18,7 @@ from agile.commons import s3file
 from agile.commons.api_response import ResposeStatus, ApiResponse
 from agile.extensions import db
 from agile.models import Idea, Idea_lab, Tag, Praise, Learn, Activities, Learn_lab
+from sqlalchemy import exc
 
 
 # 新增学习
@@ -527,7 +528,6 @@ class GetIdea(Resource):
         except:
             db.session.rollback()
 
-# TODO
 def SaveActiveAndIdea(userId, activeIds, datas):
         session = db.session
         try:
@@ -603,7 +603,10 @@ def SaveActiveAndIdea(userId, activeIds, datas):
                     learninfo.idea_id = str(idealist)
                     session.commit()
             return 1
-        except:
+        except exc.IntegrityError:
+            db.session.rollback()
+            return 2
+        except Exception:
             db.session.rollback()
             return 0
 
