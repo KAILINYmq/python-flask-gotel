@@ -57,8 +57,14 @@ class ActivitiesList(Resource):
             if args["type"] is not "":
                 filterList.append(Activities.active_type == args["type"])
             if args["startTime"] and args["endTime"] is not None:
-                filterList.append(Activities.create_time >= datetime.strptime(args["startTime"], '%Y-%m-%d  %H:%M:%S'))
-                filterList.append(Activities.create_time <= datetime.strptime(args["endTime"], '%Y-%m-%d  %H:%M:%S'))
+                if args["startTime"] == args["endTime"]:
+                    end = args["startTime"].split(" ")[0] + ' 23:59:59'
+                    print( datetime.strptime(end, '%Y-%m-%d  %H:%M:%S'))
+                    filterList.append(Activities.create_time >= datetime.strptime(args["startTime"], '%Y-%m-%d  %H:%M:%S'))
+                    filterList.append(Activities.create_time < datetime.strptime(end, '%Y-%m-%d  %H:%M:%S'))
+                else:
+                    filterList.append(Activities.create_time >= datetime.strptime(args["startTime"], '%Y-%m-%d  %H:%M:%S'))
+                    filterList.append(Activities.create_time <= datetime.strptime(args["endTime"], '%Y-%m-%d  %H:%M:%S'))
             if args["learn"] is not "":
                 filterList.append(Activities.idea_name.like('%'+args["learn"]+'%'))
             if args["idea"] is not "":
@@ -82,13 +88,14 @@ class ActivitiesList(Resource):
                 if vid is not None:
                     for v in vid:
                         data["video"].append(s3file.DEFAULT_BUCKET.generate_presigned_url(obj_key=v))
-                data["createTime"] = datetime.date(k.create_time + timedelta(days=1))
+                data["createTime"] = str(k.create_time).split(" ")[0]
                 datas.append(data)
             paginate = Activities.query.filter(and_(*filterList)).paginate(args["page"], args["size"])
             return ApiResponse(obj={"activitiesData": datas, "total":paginate.pages},
                                status=ResposeStatus.Success, msg="OK")
-        except Exception:
-            return ApiResponse(stlearndictatus=ResposeStatus.ParamFail, msg="参数错误!")
+        except Exception as e:
+            print(e)
+            return ApiResponse(status=ResposeStatus.ParamFail, msg="参数错误!")
 
 def SelectLearnIdea(id):
     Image = []
@@ -129,12 +136,16 @@ class ActivitiesAdd(Resource):
                 active.active = args['activityTypes']
                 active.active_type = args['activityDetails']
                 active.active_time = args['durationHours']
-                active.active_object = args['activityObject']
+                active.active_object = str(args['activityObject'])
                 active.description = args['activityDescription']
                 active.is_delete = 0
                 db.session.commit()
-                if SaveActiveAndIdea(current_user.id, active.id, args) == 1:
+                type = SaveActiveAndIdea(current_user.id, active.id, args)
+                if type == 1:
                     return ApiResponse(obj=json.dumps({"id": active.id}), status=ResposeStatus.Success, msg="OK")
+                elif type == 2:
+                    db.session.rollback()
+                    return ApiResponse(status=ResposeStatus.ParamFail, msg="Not Have Key!")
                 else:
                     db.session.rollback()
                     return ApiResponse(status=ResposeStatus.ParamFail, msg="Change failed！")
@@ -149,8 +160,13 @@ class ActivitiesAdd(Resource):
                                         description=args['activityDescription'], user_id=current_user.id, is_delete=0)
                 db.session.add(activities)
                 db.session.commit()
-                if SaveActiveAndIdea(current_user.id, activities.id, args) == 1:
+                # if SaveActiveAndIdea(current_user.id, activities.id, args) == 1:
+                type = SaveActiveAndIdea(current_user.id, activities.id, args)
+                if type == 1:
                     return ApiResponse(obj=json.dumps({"id": activities.id}), status=ResposeStatus.Success, msg="OK")
+                elif type == 2:
+                    db.session.rollback()
+                    return ApiResponse(status=ResposeStatus.ParamFail, msg="Not Have Key!")
                 else:
                     db.session.rollback()
                     return ApiResponse(status=ResposeStatus.ParamFail, msg="Add failed！")
