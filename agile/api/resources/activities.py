@@ -19,7 +19,7 @@ from flask_jwt_extended import current_user, jwt_required
 class ActivitiesSchema(ma.ModelSchema):
     class Meta:
         include_fk = False
-        fields = ("id", "active", "active_type", "active_time", "active_object", "idea_name", "learn_name", "description", "image", "video", "status")
+        fields = ("id", "active", "active_type", "active_time", "active_object", "description", "image", "video", "status")
         model = Activities
         sqla_session = db.session
 
@@ -27,7 +27,7 @@ class ActivitiesSchema(ma.ModelSchema):
 class ActivitiesSchemas(ma.ModelSchema):
     class Meta:
         include_fk = False
-        fields = ("id", "active", "description", "image", "video", "learn_name", "idea_name", "active_type", "create_time")
+        fields = ("id", "active", "description", "image", "video", "active_type", "create_time")
         model = Activities
         sqla_session = db.session
 
@@ -40,6 +40,14 @@ class ActivitiesSchemaTypes(ma.ModelSchema):
         sqla_session = db.session
 
 class ActivitiesList(Resource):
+    def has_tag(self,tag_set,tag):
+        if not tag:
+            return True
+        for tag0 in tag_set:
+            if tag in tag0:
+                return True
+        return False
+
     def get(self):
         # 查询活动数据
         # 1.获取参数
@@ -87,10 +95,6 @@ class ActivitiesList(Resource):
                         Activities.create_time >= datetime.strptime(startTime, '%Y-%m-%d  %H:%M:%S'))
                     filterList.append(
                         Activities.create_time <= datetime.strptime(endTime, '%Y-%m-%d  %H:%M:%S'))
-            if learn:
-                filterList.append(Activities.idea_name.like('%' + learn + '%'))
-            if idea:
-                filterList.append(Activities.learn_name.like('%' + idea + '%'))
             object = Activities.query.filter(and_(*filterList)).offset((page - 1) * size).limit(size)
             datas = []
             for k in object:
@@ -102,6 +106,8 @@ class ActivitiesList(Resource):
                 data["activeType"] = k.active_type
                 data["description"] = k.description
                 image, video, data["ideaTags"], data["learnTags"] = SelectLearnIdea(k.id)
+                if not self.has_tag(data['ideaTags'],idea) or not self.has_tag(data['learnTags'],learn):
+                    continue
                 img = re.findall('GOTFL[^\"]*', str(image))
                 vid = re.findall('GOTFL[^\"]*', str(video))
                 if img is not None:
