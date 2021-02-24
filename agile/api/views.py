@@ -48,7 +48,6 @@ api.add_resource(GetLearning, "/learning/<int:learning_id>")
 api.add_resource(SearchLearning, "/learning/list")
 api.add_resource(DownloadLearn, "/learning/download/<int:learning_id>")
 
-
 # idea
 api.add_resource(PraiseIdea, "/idea/praise")
 api.add_resource(GetIdea, "/idea/<int:idea_id>")
