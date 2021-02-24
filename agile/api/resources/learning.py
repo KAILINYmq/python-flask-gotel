@@ -124,18 +124,11 @@ class SearchLearning(Resource):
             # data = json.loads(request.get_data(as_text=True))
             tag = int(request.args.get("tag"))
             brand = int(request.args.get("brand"))
-            sortTime = int(request.args.get("page"))
+            sortTime = int(request.args.get("sort"))
             size = int(request.args.get("size"))
             page = int(request.args.get("page"))
             category = int(request.args.get("category"))
             country = str(request.args.get("country"))
-            # idd = current_user.id
-            # tag = data["tag"]
-            # brand =data["brand"]
-            # category =data["category"]
-            # sortTime =data["sort"]
-            # page = int(data["page"])
-            # size = int(data["size"])
             idd = current_user.id
             if tag == 0 and brand == 0 and category == 0:
                 ideaTotle = []
@@ -148,7 +141,7 @@ class SearchLearning(Resource):
                             if country in ide.activityObject:
                                 ideaTotle.append(ide)
                 else:
-                    student = session.query(Learn).limit(size).offset((page - 1) * size).all()
+                    student = session.query(Learn).order_by(Learn.update_time.asc()).limit(size).offset((page - 1) * size).all()
                     for ide in student:
                         if str(country) == "0":
                             ideaTotle.append(ide)
@@ -633,6 +626,7 @@ def SecetLearnInfo(id):
         dict["description"] = value.description
         dict["praiseNum"] = parasnum
         dict["time"] = value.update_time.strftime("%Y/%m/%d")
+
         if value.image is not None and len(value.image) > 0:
             dict["image"] = json.loads(value.image)
         else:
@@ -641,6 +635,20 @@ def SecetLearnInfo(id):
             dict["video"] = json.loads(value.video)
         else:
             dict["video"] = []
+        img = []
+        vio = []
+        try:
+            if dict["image"] is not None and len(dict["image"])>0:
+                for i in dict["image"]:
+                    img.append(s3file.DEFAULT_BUCKET.generate_presigned_url(obj_key=i))
+            if dict["video"] is not None and len(dict["video"])>0:
+                for i in dict["video"]:
+                   vio.append(s3file.DEFAULT_BUCKET.generate_presigned_url(obj_key=i))
+        except:
+            dict["image"] = []
+            dict["video"] = []
+        dict["image"] = img
+        dict["video"] = vio
         labId = session.query(Learn_lab).filter(Learn_lab.idea_id == value.id).all()
         tagName = []
         brandName = []
@@ -651,8 +659,10 @@ def SecetLearnInfo(id):
             for lab in labIds:
                 if lab.label_type == "Brand":
                     brandName.append(lab.label)
+                    tagName.append(lab.label)
                 elif lab.label_type == "Category":
                     categoryName = lab.label
+                    tagName.append(lab.label)
                 else:
                     tagName.append(lab.label)
         dict["tag"] = tagName
@@ -681,8 +691,10 @@ def SecetLearnInfo(id):
                         for lab in labIds:
                             if lab.label_type == "Brand":
                                 brandNamed.append(lab.label)
+                                tagNamed.append(lab.label)
                             elif lab.label_type == "Category":
                                 categoryNamed = lab.label
+                                tagNamed.append(lab.label)
                             else:
                                 tagNamed.append(lab.label)
                     # dict["tag"] = tagName
@@ -698,6 +710,21 @@ def SecetLearnInfo(id):
                         ideaDict["video"] = json.loads(idea.video)
                     else:
                         ideaDict["video"] = []
+                    img =[]
+                    vio=[]
+                    try:
+                        if ideaDict["image"] is not None and len(ideaDict["image"]) > 0:
+                            for i in ideaDict["image"]:
+                               img.append(s3file.DEFAULT_BUCKET.generate_presigned_url(obj_key=i))
+                        if ideaDict["video"] is not None and len(ideaDict["video"]) > 0:
+                            for i in ideaDict["video"]:
+                                vio.append(s3file.DEFAULT_BUCKET.generate_presigned_url(obj_key=i))
+                    except:
+                        ideaDict["image"] = []
+                        ideaDict["video"] = []
+                    ideaDict["image"] = img
+                    ideaDict["video"] =vio
+
                     IdeaData.append(ideaDict)
         dict["idea"] = IdeaData
         activedict = {}

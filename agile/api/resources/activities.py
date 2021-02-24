@@ -88,7 +88,7 @@ class ActivitiesList(Resource):
             return ApiResponse(obj={"activitiesData": datas, "total":paginate.pages},
                                status=ResposeStatus.Success, msg="OK")
         except Exception:
-            return ApiResponse(status=ResposeStatus.ParamFail, msg="参数错误!")
+            return ApiResponse(stlearndictatus=ResposeStatus.ParamFail, msg="参数错误!")
 
 def SelectLearnIdea(id):
     Image = []
