@@ -52,6 +52,15 @@ class ActivitiesList(Resource):
         filterList = []
         filterList.append(Activities.is_delete != 1)
         try:
+            if args["name"] is "All":
+                args["name"] = ""
+            if args["type"] is "All":
+                args["type"] = ""
+            if args["learn"] is "All":
+                args["learn"] = ""
+            if args["idea"] is "All":
+                args["idea"] = ""
+
             if args["name"] is not "":
                 filterList.append(Activities.active == args["name"])
             if args["type"] is not "":
