@@ -17,101 +17,7 @@ from agile import PROJECT_ROOT
 from agile.commons import s3file
 from agile.commons.api_response import ResposeStatus, ApiResponse
 from agile.extensions import db
-from agile.models import Learn, Learn_lab, Learn_type, Tag, Praise, Idea, Activities, Idea_lab
-
-
-# 新增学习
-class AddMyLearn(Resource):
-    def post(self):
-        now = time.strftime('%Y-%m-%d', time.localtime(time.time()))
-        data = json.loads(request.get_data(as_text=True))
-        session = db.session
-        student = session.query(Learn).filter(Learn.name == data["name"]).first()
-        if student:
-            return ApiResponse("", ResposeStatus.Fail, "该名字已经存在")
-        # user =Learn.session.filter(func.lower(User.email) == func.lower(email))
-        new_user = Learn(name=data["name"], description=data["description"], idea_id=str(data["ideaIdList"]),
-                         active_id=data["activeId"], creat_time=now, update_time=now)
-        session.add(new_user)
-        session.commit()
-        for id in data["ideaIdList"]:
-            ideadata = session.query(Idea).filter(Idea.id == id).first()
-            ideadata.learning_id = new_user.id
-        session.commit()
-        tag = data["tag"]
-        learning = session.query(Learn).filter(Learn.name == data["name"]).first()
-        now = time.strftime('%Y-%m-%d', time.localtime(time.time()))
-        for value in tag:
-            new_learn_lable = Learn_lab(idea_id=learning.id, tag_id=value, creat_time=now, update_time=now, is_delete=0)
-            session.add(new_learn_lable)
-
-        for value in data["brand"]:
-            new_learn_lable = Learn_lab(idea_id=learning.id, tag_id=value, creat_time=now, update_time=now, is_delete=0)
-            session.add(new_learn_lable)
-
-        for value in data["category"]:
-            new_learn_lable = Learn_lab(idea_id=learning.id, tag_id=value, creat_time=now, update_time=now, is_delete=0)
-            session.add(new_learn_lable)
-        session.commit()
-        return ApiResponse({"id": learning.id}, ResposeStatus.Success, "OK")
-
-
-# 查询学习的所有数据
-class GetAllLearn(Resource):
-    def get(self):
-        size = int(request.args.get("size"))
-        page = int(request.args.get("page"))
-        session = db.session
-        student = session.query(Learn).limit(size).offset((page - 1) * size).all()
-        data = []
-        for value in student:
-            parasnum = session.query(func.count(distinct(Praise.id))).filter(Praise.work_id == value.id,
-                                                                             Praise.type == "learning",
-                                                                             Praise.is_give == 1).scalar()
-            dict = {}
-            dict["praiseNum"] = parasnum
-            dict["id"] = value.id
-            dict["name"] = value.name
-            dict["description"] = value.description
-            dict["time"] = value.update_time.strftime("%Y/%m/%d")
-            dict["image"] = value.image
-            dict["video"] = value.video
-            labId = session.query(Learn_lab).filter(Learn_lab.idea_id == value.id).all()
-            tagName = []
-            brandName = []
-            categoryName = []
-            for id in labId:
-                # print(id,"=================")
-                labIds = session.query(Tag).filter(Tag.id == id.tag_id).all()
-                for lab in labIds:
-                    if lab.label_type == "Brand":
-                        brandName.append(lab.label)
-                    elif lab.label_type == "Category":
-                        categoryName.append(lab.label)
-                    else:
-                        tagName.append(lab.label)
-            # dict["tag"] = tagName
-            dict["barnd"] = brandName
-            dict["category"] = categoryName
-            # print(type(dict["ideaId"]),type(value.idea_id),"==================")
-            IdeaData = []
-            if value.idea_id is not None:
-                idealist = json.loads(value.idea_id)
-                for val in idealist:
-                    ideaDict = {}
-                    idea = session.query(Idea).filter(Idea.id == val).first()
-                    if idea is not None:
-                        ideaDict["id"] = idea.id
-                        ideaDict["name"] = idea.name
-                        ideaDict["description"] = idea.description
-                        ideaDict["time"] = idea.update_time.strftime("%Y/%m/%d")
-                        ideaDict["image"] = idea.image
-                        ideaDict["video"] = idea.video
-                        IdeaData.append(ideaDict)
-            dict["idea"] = IdeaData
-            data.append(dict)
-        # print(data)
-        return ApiResponse(data, ResposeStatus.Success)
+from agile.models import Learn, Learn_lab, Learn_type, Tag, Praise, Idea, Activities, Idea_lab, User
 
 
 # 根据tag,brand，category进行查询
@@ -121,237 +27,82 @@ class SearchLearning(Resource):
     def get(self):
         session = db.session
         try:
-            # data = json.loads(request.get_data(as_text=True))
+            user_id = current_user.id
             tag = int(request.args.get("tag"))
             brand = int(request.args.get("brand"))
-            sortTime = int(request.args.get("sort"))
+            sort_time = int(request.args.get("sort"))
             size = int(request.args.get("size"))
             page = int(request.args.get("page"))
             category = int(request.args.get("category"))
             country = str(request.args.get("country"))
-            idd = current_user.id
-            if tag == 0 and brand == 0 and category == 0:
-                ideaTotle = []
-                if int(sortTime) == 0:
-                    student = session.query(Learn).limit(size).offset((page - 1) * size).all()
-                    for ide in student:
-                        if str(country) == "0":
-                            ideaTotle.append(ide)
-                        else:
-                            if country in ide.activityObject:
-                                ideaTotle.append(ide)
+            filters = []
+            if tag:
+                filters.append(Learn_lab.tag_id == tag)
+            if category:
+                filters.append(Learn_lab.tag_id == category)
+            if brand:
+                filters.append(Learn_lab.tag_id == brand)
+            if country and str(country) != '0':
+                filters.append(User.country == country)
+            query = session.query(Learn, Learn_lab, User). \
+                filter(Learn.id == Learn_lab.learn_id). \
+                filter(Learn.user_id == User.id). \
+                filter(and_(*filters))
+            order_criteria = Learn.update_time.desc()
+            if sort_time:
+                order_criteria = Learn.update_time.asc()
+            results = query.order_by(order_criteria) \
+                .offset((page - 1) * size) \
+                .limit(size)
+            paginate = query.paginate(page, size).pages
+            response = {
+                "totalNum": paginate
+            }
+            data = []
+            for value, _, _ in results:
+                praise_num = session.query(func.count(distinct(Praise.id))) \
+                    .filter(Praise.work_id == value.id, Praise.type == "learn", Praise.is_give == 1).scalar()
+                praise = Praise.query.filter(Praise.work_id == value.id, Praise.type == "learn",
+                                             Praise.user_id == str(user_id), Praise.is_give == 1).first()
+                item = {}
+                if praise:
+                    item["isPraise"] = 1
                 else:
-                    student = session.query(Learn).order_by(Learn.update_time.asc()).limit(size).offset((page - 1) * size).all()
-                    for ide in student:
-                        if str(country) == "0":
-                            ideaTotle.append(ide)
-                        else:
-                            if country in ide.activityObject:
-                                ideaTotle.append(ide)
-                data = []
-                dicts = {}
-                countSize = session.query(Learn).all()
-                countCount = []
-                for val in countSize:
-                    if str(country) == "0":
-                        countCount.append(val)
-                    else:
-                        if country in val.activityObject:
-                            countCount.append(val)
-                if len(countCount) % size == 0:
-                    dicts["totalNum"] = int(len(countCount) / size)
+                    item["isPraise"] = 0
+                item["praiseNum"] = praise_num
+                item["id"] = value.id
+                item["name"] = value.name
+                item["description"] = value.description
+                item["time"] = value.update_time.strftime("%Y/%m/%d")
+                if value.image is not None and len(value.image) > 0:
+                    item["image"] = json.loads(value.image)
                 else:
-                    dicts["totalNum"] = int(len(countCount) / size) + 1
-                for value in ideaTotle:
-                    parasnum = session.query(func.count(distinct(Praise.id))).filter(Praise.work_id == value.id,
-                                                                                     Praise.type == "learning",
-                                                                                     Praise.is_give == 1).scalar()
-                    dict = {}
-                    parise = Praise.query.filter(Praise.work_id == value.id, Praise.type == "learning",
-                                                 Praise.user_id == str(idd), Praise.is_give == 1).first()
-                    if parise is not None:
-                        dict["isPraise"] = 1
-                    else:
-                        dict["isPraise"] = 0
-                    dict["praiseNum"] = parasnum
-                    dict["id"] = value.id
-                    dict["name"] = value.name
-                    dict["description"] = value.description
-                    dict["time"] = value.update_time.strftime("%Y/%m/%d")
-                    if value.image is not None and len(value.image) > 0:
-                        dict["image"] = json.loads(value.image)
-                    else:
-                        dict["image"] = []
-                    if value.video is not None and len(value.video) > 0:
-                        dict["video"] = json.loads(value.video)
-                    else:
-                        dict["video"] = []
-                    labId = session.query(Learn_lab).filter(Learn_lab.idea_id == value.id).all()
-                    tagName = []
-                    brandName = []
-                    categoryName = ""
-                    for id in labId:
-                        # print(id,"=================")
-                        labIds = session.query(Tag).filter(Tag.id == id.tag_id).all()
-                        for lab in labIds:
-                            if lab.label_type == "Brand":
-                                brandName.append(lab.label)
-                            elif lab.label_type == "Category":
-                                categoryName = lab.label
-                            else:
-                                tagName.append(lab.label)
-                    # dict["tag"] = tagName
-                    dict["brand"] = brandName
-                    dict["category"] = categoryName
-                    # print(type(dict["ideaId"]),type(value.idea_id),"==================")
-                    IdeaData = []
-                    if value.idea_id is not None and len(value.idea_id) > 0:
-                        idealist = json.loads(value.idea_id)
-                        for val in idealist:
-                            ideaDict = {}
-                            idea = session.query(Idea).filter(Idea.id == val).first()
-                            if idea is not None:
-                                ideaDict["id"] = idea.id
-                                ideaDict["name"] = idea.name
-                                ideaDict["description"] = idea.description
-                                ideaDict["time"] = idea.update_time.strftime("%Y/%m/%d")
-                                if idea.image is not None and len(idea.image) > 0:
-                                    ideaDict["image"] = json.loads(idea.image)
-                                else:
-                                    ideaDict["image"] = []
-                                if idea.video is not None and len(idea.video) > 0:
-                                    ideaDict["video"] = json.loads(idea.video)
-                                else:
-                                    ideaDict["video"] = []
-                                IdeaData.append(ideaDict)
-                    dict["idea"] = IdeaData
-                    data.append(dict)
-                dicts["data"] = data
-                session.commit()
-                return ApiResponse(dicts, ResposeStatus.Success)
-            else:
-                session = db.session
-                tagnums = []
-                brandnum = []
-                categorynum = []
-                tagList = session.query(Learn_lab).filter(Learn_lab.tag_id == tag).all()
-                for val in tagList:
-                    tagnums.append(val.idea_id)
-                brandList = session.query(Learn_lab).filter(Learn_lab.tag_id == brand).all()
-                for val in brandList:
-                    brandnum.append(val.idea_id)
-                categoryList = session.query(Learn_lab).filter(Learn_lab.tag_id == category).all()
-                for val in categoryList:
-                    categorynum.append(val.idea_id)
-                if len(categorynum)==0:
-                    tagnum = brandnum
-                if len(brandnum)==0:
-                    tagnum = categorynum
-                if len(categorynum)!= 0 and len(brandnum)!=0:
-                    tagnum = list(set(categorynum).intersection(set(brandnum)))
-                # countTotle = session.query(func.count(distinct(Learn.id))).filter(Learn.id.in_(tagnum)).scalar()
-                dicts = {}
-                result_six = []
-                if int(sortTime) == 0:
-                    totleCount = session.query(Learn).filter(Learn.id.in_(tagnum)).limit(size).offset((page - 1) * size)
-                    for ide in totleCount:
-                        if str(country) == "0":
-                            result_six.append(ide)
-                        else:
-                            if country in ide.activityObject:
-                                result_six.append(ide)
+                    item["image"] = []
+                if value.video is not None and len(value.video) > 0:
+                    item["video"] = json.loads(value.video)
                 else:
-                    totleCount = session.query(Learn).filter(Learn.id.in_(tagnum)).order_by(Learn.update_time.asc()).limit(
-                        size).offset((page - 1) * size)
-                    for ide in totleCount:
-                        if str(country) == "0":
-                            result_six.append(ide)
-                        else:
-                            if country in ide.activityObject:
-                                result_six.append(ide)
-                countSize = session.query(Learn).filter(Learn.id.in_(tagnum)).all()
-                countCount = []
-                for val in countSize:
-                    if str(country) == "0":
-                        countCount.append(val)
+                    item["video"] = []
+                query_tags = session.query(Learn_lab, Tag) \
+                    .filter(Learn_lab.tag_id == Tag.id) \
+                    .filter(Learn_lab.idea_id == value.id) \
+                    .all()
+                tags = []
+                brands = []
+                category = ""
+                for _, tag in query_tags:
+                    if tag.label_type == "Brand":
+                        brands.append(tag.label)
+                    elif tag.label_type == "Category":
+                        category = tag.label
                     else:
-                        if country in val.activityObject:
-                            countCount.append(val)
-
-                if len(countCount) % size == 0:
-                    dicts["totalNum"] = int(len(countCount) / size)
-                else:
-                    dicts["totalNum"] = int(len(countCount) / size) + 1
-
-                data = []
-                for val in result_six:
-                    parasnum = session.query(func.count(distinct(Praise.id))).filter(Praise.work_id == val.id,
-                                                                                     Praise.type == "learning",
-                                                                                     Praise.is_give == 1).scalar()
-
-                    dict = {}
-                    parise = Praise.query.filter(Praise.work_id == val.id, Praise.type == "learning",
-                                                 Praise.user_id == str(idd), Praise.is_give == 1).first()
-                    if parise is not None:
-                        dict["isPraise"] = 1
-                    else:
-                        dict["isPraise"] = 0
-                    dict["praiseNum"] = parasnum
-                    dict["id"] = val.id
-                    dict["name"] = val.name
-                    dict["description"] = val.description
-                    dict["time"] = val.update_time.strftime("%Y/%m/%d")
-                    if val.image is not None and len(val.image) > 0:
-                        dict["image"] = json.loads(val.image)
-                    else:
-                        dict["image"] = []
-                    if val.video is not None and len(val.video) > 0:
-                        dict["video"] = json.loads(val.video)
-                    else:
-                        dict["video"] = []
-                    labId = session.query(Learn_lab).filter(Learn_lab.idea_id == val.id).all()
-                    tagName = []
-                    brandName = []
-                    categoryName = ""
-                    for id in labId:
-                        # print(id,"=================")
-                        labIds = session.query(Tag).filter(Tag.id == id.tag_id).all()
-                        for lab in labIds:
-                            if lab.label_type == "Brand":
-                                brandName.append(lab.label)
-                            elif lab.label_type == "Category":
-                                categoryName = lab.label
-                            else:
-                                tagName.append(lab.label)
-                    # dict["tag"] = tagName
-                    dict["brand"] = brandName
-                    dict["category"] = categoryName
-                    IdeaData = []
-                    if val.idea_id is not None:
-                        idealist = json.loads(val.idea_id)
-                        for value in idealist:
-                            ideaDict = {}
-                            idea = session.query(Idea).filter(Idea.id == value).first()
-                            if idea is not None:
-                                ideaDict["id"] = idea.id
-                                ideaDict["name"] = idea.name
-                                ideaDict["description"] = idea.description
-                                ideaDict["time"] = idea.update_time.strftime("%Y/%m/%d")
-                                if idea.image is not None and len(idea.image) > 0:
-                                    ideaDict["image"] = json.loads(idea.image)
-                                else:
-                                    ideaDict["image"] = []
-                                if idea.video is not None and len(idea.video) > 0:
-                                    ideaDict["video"] = json.loads(idea.video)
-                                else:
-                                    ideaDict["video"] = []
-                                IdeaData.append(ideaDict)
-                    dict["Idea"] = IdeaData
-                    data.append(dict)
-                dicts["data"] = data
-                session.commit()
-                return ApiResponse(dicts, ResposeStatus.Success)
-        except:
+                        tags.append(tag.label)
+                # item["tag"] = tags
+                item["brand"] = brands
+                item["category"] = category
+                data.append(item)
+            response["data"] = data
+            return ApiResponse(response, ResposeStatus.Success)
+        except Exception as e:
             return ApiResponse(status=ResposeStatus.ParamFail, msg="查询数据错误!")
 
 
@@ -374,15 +125,18 @@ class UpdataLearn(Resource):
         learning = session.query(Learn).filter(Learn.name == data["name"]).first()
 
         for value in tag:
-            new_learn_lable = Learn_lab(idea_id=learning.id, tag_id=value, creat_time=now, update_time=now, is_delete=0)
+            new_learn_lable = Learn_lab(idea_id=learning.id, tag_id=value, create_time=now, update_time=now,
+                                        is_delete=0)
             session.add(new_learn_lable)
 
         for value in data["brand"]:
-            new_learn_lable = Learn_lab(idea_id=learning.id, tag_id=value, creat_time=now, update_time=now, is_delete=0)
+            new_learn_lable = Learn_lab(idea_id=learning.id, tag_id=value, create_time=now, update_time=now,
+                                        is_delete=0)
             session.add(new_learn_lable)
 
         for value in data["category"]:
-            new_learn_lable = Learn_lab(idea_id=learning.id, tag_id=value, creat_time=now, update_time=now, is_delete=0)
+            new_learn_lable = Learn_lab(idea_id=learning.id, tag_id=value, create_time=now, update_time=now,
+                                        is_delete=0)
             session.add(new_learn_lable)
 
         session.commit()
@@ -423,75 +177,6 @@ class Praises(Resource):
         except:
             db.session.rollback()
             return ApiResponse(status=ResposeStatus.ParamFail, msg="点赞错误!")
-
-
-class __SearchLearning(Resource):
-
-    def get(self):
-        name = request.args.get("name")
-        page = request.args.get("page")
-        size = request.args.get("size")
-        session = db.session
-        names = "%%" + name + "%%"
-        nums = session.query(Learn).filter(Learn.name.like(names)).all()
-        countTotle = len(nums)
-        data = []
-        student = session.query(Learn).filter(Learn.name.like(names)).limit(int(size)).offset(
-            (int(page) - 1) * int(size)).all()
-        dicts = {}
-        if countTotle % int(size) == 0:
-            dicts["totleNum"] = int(countTotle / int(size))
-        else:
-            dicts["totleNum"] = int(countTotle / int(size)) + 1
-        for value in student:
-            parasnum = session.query(func.count(distinct(Praise.id))).filter(Praise.work_id == value.id,
-                                                                             Praise.type == "learning",
-                                                                             Praise.is_give == 1).scalar()
-            dict = {}
-            dict["praiseNum"] = parasnum
-            dict["id"] = value.id
-            dict["name"] = value.name
-            dict["description"] = value.description
-            dict["time"] = value.update_time.strftime("%Y/%m/%d")
-            dict["image"] = value.image
-            dict["video"] = value.video
-            labId = session.query(Learn_lab).filter(Learn_lab.idea_id == value.id).all()
-            tagName = []
-            brandName = []
-            categoryName = ""
-            for id in labId:
-                # print(id,"=================")
-                labIds = session.query(Tag).filter(Tag.id == id.tag_id).all()
-                for lab in labIds:
-                    if lab.label_type == "Brand":
-                        brandName.append(lab.label)
-                    elif lab.label_type == "Category":
-                        categoryName = lab.label
-                    else:
-                        tagName.append(lab.label)
-            # dict["tag"] = tagName
-            dict["barnd"] = brandName
-            dict["category"] = categoryName
-            # print(type(dict["ideaId"]),type(value.idea_id),"==================")
-            IdeaData = []
-            if value.idea_id is not None:
-                idealist = json.loads(value.idea_id)
-                for val in idealist:
-                    ideaDict = {}
-                    idea = session.query(Idea).filter(Idea.id == val).first()
-                    if idea is not None:
-                        ideaDict["id"] = idea.id
-                        ideaDict["name"] = idea.name
-                        ideaDict["description"] = idea.description
-                        ideaDict["time"] = idea.update_time.strftime("%Y/%m/%d")
-                        ideaDict["image"] = idea.image
-                        ideaDict["video"] = idea.video
-                        IdeaData.append(ideaDict)
-            dict["idea"] = IdeaData
-            data.append(dict)
-        dicts["data"] = data
-        session.commit()
-        return ApiResponse(dicts, ResposeStatus.Success)
 
 
 class GetLearning(Resource):
@@ -569,7 +254,7 @@ def create_workbook(object, filePath, active, Idea):
     worksheet.write_row('A1', title)
     worksheet.write_row('A2', [str(object.name),
                                str(object.description),
-                               str(object.creat_time),
+                               str(object.create_time),
                                # TODO 解析object
                                str(active.active),
                                str(active.description),
@@ -640,12 +325,12 @@ def SecetLearnInfo(id):
         img = []
         vio = []
         try:
-            if dict["image"] is not None and len(dict["image"])>0:
+            if dict["image"] is not None and len(dict["image"]) > 0:
                 for i in dict["image"]:
                     img.append(s3file.DEFAULT_BUCKET.generate_presigned_url(obj_key=i))
-            if dict["video"] is not None and len(dict["video"])>0:
+            if dict["video"] is not None and len(dict["video"]) > 0:
                 for i in dict["video"]:
-                   vio.append(s3file.DEFAULT_BUCKET.generate_presigned_url(obj_key=i))
+                    vio.append(s3file.DEFAULT_BUCKET.generate_presigned_url(obj_key=i))
         except:
             dict["image"] = []
             dict["video"] = []
@@ -712,12 +397,12 @@ def SecetLearnInfo(id):
                         ideaDict["video"] = json.loads(idea.video)
                     else:
                         ideaDict["video"] = []
-                    img =[]
-                    vio=[]
+                    img = []
+                    vio = []
                     try:
                         if ideaDict["image"] is not None and len(ideaDict["image"]) > 0:
                             for i in ideaDict["image"]:
-                               img.append(s3file.DEFAULT_BUCKET.generate_presigned_url(obj_key=i))
+                                img.append(s3file.DEFAULT_BUCKET.generate_presigned_url(obj_key=i))
                         if ideaDict["video"] is not None and len(ideaDict["video"]) > 0:
                             for i in ideaDict["video"]:
                                 vio.append(s3file.DEFAULT_BUCKET.generate_presigned_url(obj_key=i))
@@ -725,7 +410,7 @@ def SecetLearnInfo(id):
                         ideaDict["image"] = []
                         ideaDict["video"] = []
                     ideaDict["image"] = img
-                    ideaDict["video"] =vio
+                    ideaDict["video"] = vio
 
                     IdeaData.append(ideaDict)
         dict["idea"] = IdeaData
@@ -744,4 +429,3 @@ def SecetLearnInfo(id):
     except:
         db.session.rollback()
         return dict
-

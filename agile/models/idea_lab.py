@@ -1,6 +1,6 @@
 # coding: utf-8
 from agile.extensions import db
-from agile.database import BaseModel
+
 
 class Idea_lab(db.Model):
     """
@@ -13,7 +13,7 @@ class Idea_lab(db.Model):
     # 标签ID
     tag_id = db.Column(db.Integer, db.ForeignKey('tag.id'))
     # 创建时间
-    creat_time = db.Column(db.DateTime)
+    create_time = db.Column(db.DateTime)
     # 更新时间
     update_time = db.Column(db.DateTime)
     # 是否删除
