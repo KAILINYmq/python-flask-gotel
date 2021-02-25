@@ -27,25 +27,33 @@ class SearchLearning(Resource):
     def get_learning_ids(self, brand, category, tag):
         if not brand and not category and not tag:
             return None
-        brand_results = set()
-        category_results = set()
-        tag_results = set()
+        final_result_set = None
         if brand:
+            brand_results = set()
             results = db.session.query(Learn_lab).filter(Learn_lab.tag_id == brand).all()
             for result in results:
                 brand_results.add(result.learn_id)
+            final_result_set = brand_results
 
         if category:
+            category_results = set()
             results = db.session.query(Learn_lab).filter(Learn_lab.tag_id == category).all()
             for result in results:
                 category_results.add(result.learn_id)
-
+            if final_result_set is not None:
+                final_result_set = final_result_set.intersection(category_results)
+            else:
+                final_result_set = category_results
         if tag:
+            tag_results = set()
             results = db.session.query(Learn_lab).filter(Learn_lab.tag_id == tag).all()
             for result in results:
                 tag_results.add(result.learn_id)
-
-        return brand_results.intersection(category_results).difference(tag_results)
+            if final_result_set is not None:
+                final_result_set = final_result_set.intersection(tag_results)
+            else:
+                final_result_set = tag_results
+        return final_result_set
 
     def get(self):
         session = db.session
@@ -58,10 +66,10 @@ class SearchLearning(Resource):
             page = int(request.args.get("page"))
             category = int(request.args.get("category"))
             country = str(request.args.get("country"))
-            sub_query = session.query(Learn.id, func.coalesce(func.sum(Praise.is_give), 0).label("praiseCount"))\
+            sub_query = session.query(Learn.id, func.coalesce(func.sum(Praise.is_give), 0).label("praiseCount")) \
                 .join(Praise, and_(Praise.work_id == Learn.id, Praise.type == "learning"), full=True) \
                 .group_by(Learn.id).subquery()
-            query = session.query(Learn, User, sub_query)\
+            query = session.query(Learn, User, sub_query) \
                 .filter(Learn.user_id == User.id, Learn.id == sub_query.c.id)
             if country and str(country) != '0':
                 query = query.filter(User.country == country)

@@ -28,25 +28,34 @@ class SearchIdea(Resource):
     def get_idea_ids(self, brand, category, tag):
         if not brand and not category and not tag:
             return None
-        brand_results = set()
-        category_results = set()
-        tag_results = set()
+        final_result_set = None
         if brand:
+            brand_results = set()
             results = db.session.query(Idea_lab).filter(Learn_lab.tag_id == brand).all()
             for result in results:
                 brand_results.add(result.idea_id)
+            final_result_set = brand_results
 
         if category:
+            category_results = set()
             results = db.session.query(Idea_lab).filter(Learn_lab.tag_id == category).all()
             for result in results:
                 category_results.add(result.idea_id)
+            if final_result_set is not None:
+                final_result_set = final_result_set.intersection(category_results)
+            else:
+                final_result_set = category_results
 
         if tag:
+            tag_results = set()
             results = db.session.query(Idea_lab).filter(Learn_lab.tag_id == tag).all()
             for result in results:
                 tag_results.add(result.idea_id)
-
-        return brand_results.intersection(category_results).difference(tag_results)
+            if final_result_set is not None:
+                final_result_set = final_result_set.intersection(tag_results)
+            else:
+                final_result_set = tag_results
+        return final_result_set
 
     def get(self):
         session = db.session
