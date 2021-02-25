@@ -171,24 +171,24 @@ def SelectLearnIdeaList(id):
     IdeaTag = []
     LearnTags = []
     print(id)
-    # LearnData = []
-    # try:
     LearnData = Learn.query.filter(and_(Learn.active_id == id)).all()
-    # except Exception:
     if LearnData is None:
-        print("cuo")
         return set(filter(None, Image)), set(filter(None, Video)), set(filter(None, IdeaTag)), set(filter(None, LearnTags))
     for l in LearnData:
         IdeaData = Idea.query.filter(and_(Idea.learning_id == l.id)).all()
-        learnlab  = Learn_lab.query.filter(Learn_lab.idea_id == l.id).all()
-        for llab in learnlab:
-            ltag = Tag.query.filter(and_(Tag.id == llab.tag_id, Tag.label_type == "Learnings")).first()
-            LearnTags.append(ltag.label)
+        learnlab  = Learn_lab.query.filter(Learn_lab.learn_id == l.id).all()
+        if learnlab is not None:
+            for llab in learnlab:
+                ltag = Tag.query.filter(and_(Tag.id == llab.tag_id, Tag.label_type == "Learnings")).first()
+                if ltag is not None:
+                    LearnTags.append(ltag.label)
         for i in IdeaData:
             idealab = Idea_lab.query.filter(Idea_lab.idea_id == l.id).all()
-            for ilab in idealab:
-                itag = Tag.query.filter(and_(Tag.id == ilab.tag_id, Tag.label_type == "Idea")).first()
-                LearnTags.append(itag.label)
+            if idealab is not None:
+                for ilab in idealab:
+                    itag = Tag.query.filter(and_(Tag.id == ilab.tag_id, Tag.label_type == "Idea")).first()
+                    if itag is not None:
+                        LearnTags.append(itag.label)
             IdeaTag.append(i.name)
             Image.append(i.image)
             Video.append(i.video)
