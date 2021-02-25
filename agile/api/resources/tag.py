@@ -174,7 +174,7 @@ class Feedback(Resource):
             else:
                 result["total"] = len(data) // size + 1
 
-            return ApiResponse("result", ResposeStatus.Success)
+            return ApiResponse(result, ResposeStatus.Success)
         except RuntimeError:
             return ApiResponse("Search failed! Please try again.", ResposeStatus.Fail)
 
