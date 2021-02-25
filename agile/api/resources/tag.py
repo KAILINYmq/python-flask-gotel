@@ -126,7 +126,7 @@ class Feedback(Resource):
             if page is None or size is None or int(page) <= 0 or int(size) <= 0:
                 return ApiResponse("page or size parm have mistake.", ResposeStatus.Fail)
 
-            if userId is None or endTime == "":
+            if userId is None or userId == "":
                 return ApiResponse("user is not found!",ResposeStatus.Fail)
 
             size = int(size)
