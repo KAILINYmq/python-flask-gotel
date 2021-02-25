@@ -107,7 +107,10 @@ class ActivitiesList(Resource):
                         Activities.create_time >= datetime.strptime(startTime, '%Y-%m-%d  %H:%M:%S'))
                     filterList.append(
                         Activities.create_time <= datetime.strptime(endTime, '%Y-%m-%d  %H:%M:%S'))
-            object = Activities.query.filter(and_(*filterList)).offset((page - 1) * size).limit(size)
+            object = Activities.query\
+                .filter(and_(*filterList)).offset((page - 1) * size)\
+                .order_by(Activities.create_time.desc())\
+                .limit(size)
             paginate = Activities.query.filter(and_(*filterList)).paginate(page, size).pages
             # learn  idea
             if not name and (learn or idea):
