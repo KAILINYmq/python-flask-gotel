@@ -114,19 +114,19 @@ class Feedback(Resource):
             size = request.args.get("size")
 
             # 校验参数
-            if status is None:
+            if status is None or status == "":
                 status = "3"
 
-            if startTime is None:
+            if startTime is None or startTime == "":
                 startTime = "2020-1-1"
 
-            if endTime is None:
+            if endTime is None or endTime == "":
                 endTime = time.strftime("%Y-%m-%d", time.localtime())
 
             if page is None or size is None or int(page) <= 0 or int(size) <= 0:
                 return ApiResponse("page or size parm have mistake.", ResposeStatus.Fail)
 
-            if userId is None:
+            if userId is None or endTime == "":
                 return ApiResponse("user is not found!",ResposeStatus.Fail)
 
             size = int(size)
