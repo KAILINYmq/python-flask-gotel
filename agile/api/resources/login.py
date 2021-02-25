@@ -290,8 +290,8 @@ def splitTotal(dateType, data, tab):
     """
 
     result = {}
-    monthList = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"]
-    weekList = ["oneWeek", "twoWeek", "threeWeek", "fourWeek", "fiveWeek", "sixWeek"]
+    monthList = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    weekList = ["Week 1", "Week 2", "Week 3", "Week 4", "Week 5", "Week 6"]
     if dateType == "0":
         # 对data数据进行筛选往前倒6周的数据，并且对每一周的数量进行记录
         frontTime = datetime.date.today()
@@ -330,8 +330,8 @@ def splitTotalCompany(dateType, data, tab):
 
     result = {}
     count = 0
-    monthList = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"]
-    weekList = ["oneWeek", "twoWeek", "threeWeek", "fourWeek", "fiveWeek", "sixWeek"]
+    monthList = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    weekList = ["Week 1", "Week 2", "Week 3", "Week 4", "Week 5", "Week 6"]
     if dateType == "0":
         # 对data数据进行筛选往前倒6周的数据，并且对每一周的数量进行记录
         frontTime = datetime.date.today()

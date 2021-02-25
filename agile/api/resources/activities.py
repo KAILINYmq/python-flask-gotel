@@ -19,9 +19,11 @@ from flask_jwt_extended import current_user, jwt_required
 class ActivitiesSchema(ma.ModelSchema):
     class Meta:
         include_fk = False
-        fields = ("id", "active", "active_type", "active_time", "active_object", "description", "image", "video", "status")
+        fields = (
+        "id", "active", "active_type", "active_time", "active_object", "description", "image", "video", "status")
         model = Activities
         sqla_session = db.session
+
 
 # 查询返回数据格式
 class ActivitiesSchemas(ma.ModelSchema):
@@ -31,6 +33,7 @@ class ActivitiesSchemas(ma.ModelSchema):
         model = Activities
         sqla_session = db.session
 
+
 # 查询返回types 和 details
 class ActivitiesSchemaTypes(ma.ModelSchema):
     class Meta:
@@ -39,8 +42,9 @@ class ActivitiesSchemaTypes(ma.ModelSchema):
         model = Type_table
         sqla_session = db.session
 
+
 class ActivitiesList(Resource):
-    def has_tag(self,tag_set,tag):
+    def has_tag(self, tag_set, tag):
         if not tag:
             return True
         for tag0 in tag_set:
@@ -48,13 +52,24 @@ class ActivitiesList(Resource):
                 return True
         return False
 
+    def SelectLearnIdea(self, learn, idea):
+        object = []
+        LearnData = Learn.query.filter(Learn.name == learn).all()
+        for l in LearnData:
+            IdeaData = Idea.query.filter(Idea.name == idea).all()
+            object.append(Activities.query.filter(Activities.id == l.active_id).first())
+            for i in IdeaData:
+                lean = Learn.query.filter(Learn.id == i.learning_id).first()
+                object.append(Activities.query.filter(Activities.id == lean.active_id).first())
+        return list(filter(None, object))
+
     def get(self):
         # 查询活动数据
         # 1.获取参数
         args = request.args
         # 2. 查询参数
         filterList = []
-        filterList.append(Activities.is_delete != 1)
+        filterList.append(Activities.is_delete == 0)
         try:
             name = args.get("name")
             _type = args.get("type")
@@ -78,15 +93,13 @@ class ActivitiesList(Resource):
                 size = 10
             page = int(page)
             size = int(size)
-
-            if name:
+            if name is not "":
                 filterList.append(Activities.active == name)
-            if _type:
+            if _type is not "":
                 filterList.append(Activities.active_type == _type)
             if startTime and endTime:
                 if startTime == endTime:
                     end = startTime.split(" ")[0] + ' 23:59:59'
-                    print(datetime.strptime(end, '%Y-%m-%d  %H:%M:%S'))
                     filterList.append(
                         Activities.create_time >= datetime.strptime(startTime, '%Y-%m-%d  %H:%M:%S'))
                     filterList.append(Activities.create_time < datetime.strptime(end, '%Y-%m-%d  %H:%M:%S'))
@@ -96,6 +109,24 @@ class ActivitiesList(Resource):
                     filterList.append(
                         Activities.create_time <= datetime.strptime(endTime, '%Y-%m-%d  %H:%M:%S'))
             object = Activities.query.filter(and_(*filterList)).offset((page - 1) * size).limit(size)
+            paginate = Activities.query.filter(and_(*filterList)).paginate(page, size).pages
+            # learn  idea
+            if name is "" and (learn is not "" or idea is not ""):
+                # TODO page
+                activitiesObj = self.SelectLearnIdea(learn=learn, idea=idea)
+                object = []
+                # 对数据进行处理，只保留分页需要的数据
+                count = 0
+                countPage = 1
+                for i in activitiesObj:
+                    if countPage == page:
+                        object.append(i)
+
+                    count += 1
+                    if count % size == 0:
+                        countPage += 1
+                # object = activitiesObj
+                paginate = (len(object)+size-1)//size
             datas = []
             for k in object:
                 data = {}
@@ -105,9 +136,8 @@ class ActivitiesList(Resource):
                 data["activeName"] = k.active
                 data["activeType"] = k.active_type
                 data["description"] = k.description
+                # TODO
                 image, video, data["ideaTags"], data["learnTags"] = SelectLearnIdea(k.id)
-                if not self.has_tag(data['ideaTags'],idea) or not self.has_tag(data['learnTags'],learn):
-                    continue
                 img = re.findall('GOTFL[^\"]*', str(image))
                 vid = re.findall('GOTFL[^\"]*', str(video))
                 if img is not None:
@@ -118,15 +148,15 @@ class ActivitiesList(Resource):
                         data["video"].append(s3file.DEFAULT_BUCKET.generate_presigned_url(obj_key=v))
                 data["createTime"] = str(k.create_time).split(" ")[0]
                 datas.append(data)
-            paginate = Activities.query.filter(and_(*filterList)).paginate(page, size)
             return ApiResponse(obj={
                 "activitiesData": datas,
-                "total"         : paginate.pages
+                "total": paginate
             },
                 status=ResposeStatus.Success, msg="OK")
         except Exception as e:
             print(e)
             return ApiResponse(status=ResposeStatus.ParamFail, msg="参数错误!")
+
 
 def SelectLearnIdea(id):
     Image = []
@@ -144,7 +174,6 @@ def SelectLearnIdea(id):
         Video.append(l.video)
         LearnTags.append(l.name)
     return set(filter(None, Image)), set(filter(None, Video)), set(filter(None, IdeaTag)), set(filter(None, LearnTags))
-
 
 
 class ActivitiesAdd(Resource):
@@ -205,6 +234,7 @@ class ActivitiesAdd(Resource):
                 db.session.rollback()
                 return ApiResponse(status=ResposeStatus.ParamFail, msg="Add failed！")
 
+
 class SingleActivities(Resource):
     def get(self, activities_id):
         # 查询单个活动数据
@@ -237,6 +267,7 @@ class SingleActivities(Resource):
             return ApiResponse(status=ResposeStatus.Success, msg="OK")
         return ApiResponse(status=ResposeStatus.Success, msg="OK")
 
+
 class ActivityTypes(Resource):
     def get(self):
         datas = []
@@ -252,16 +283,17 @@ class ActivityTypes(Resource):
                 data["activityDetails"].append(k.name)
             creatTime = datetime.strptime(object[i]["creat_time"][0:10], "%Y-%m-%d")
             nowTime = datetime.strptime(str(datetime.now())[0:10], "%Y-%m-%d")
-            data["isNew"] = 1 if (nowTime-creatTime).days < 7 else 0
+            data["isNew"] = 1 if (nowTime - creatTime).days < 7 else 0
             datas.append(data)
         return ApiResponse(obj=datas, status=ResposeStatus.Success, msg="OK")
+
 
 class Download(Resource):
     def get(self, activities_id):
         # 1.创建文件夹
-        path = PROJECT_ROOT+"/static/"
+        path = PROJECT_ROOT + "/static/"
         fileDownloadPath = path.replace('\\', '/')
-        filePath = fileDownloadPath+ str(activities_id)+"/"
+        filePath = fileDownloadPath + str(activities_id) + "/"
         if os.path.exists(filePath):
             shutil.rmtree(filePath)
         os.makedirs(filePath)
@@ -270,22 +302,25 @@ class Download(Resource):
         if object is None:
             return ApiResponse(status=ResposeStatus.ParamFail, msg="No data for this activity！")
         image, video, _, _ = SelectLearnIdea(object.id)
-        create_workbook(object, filePath+"Activity.xlsx", activities_id)
+        create_workbook(object, filePath + "Activity.xlsx", activities_id)
         img = re.findall('GOTFL[^\"]*', str(image))
         vid = re.findall('GOTFL[^\"]*', str(video))
         # 3. 存储图片 存储视频
         if img is not None:
             for i in img:
-                getFile(filePath, s3file.DEFAULT_BUCKET.generate_presigned_url(obj_key=i), "Image-" + str(i.index(i))+i[-4:])
+                getFile(filePath, s3file.DEFAULT_BUCKET.generate_presigned_url(obj_key=i),
+                        "Image-" + str(i.index(i)) + i[-4:])
         if vid is not None:
             for v in vid:
-                getFile(filePath, s3file.DEFAULT_BUCKET.generate_presigned_url(obj_key=v), "Video-" + str(v.index(v))+v[-4:])
+                getFile(filePath, s3file.DEFAULT_BUCKET.generate_presigned_url(obj_key=v),
+                        "Video-" + str(v.index(v)) + v[-4:])
         # 4. 打包zip
-        make_zip(filePath, fileDownloadPath+str(activities_id)+".zip")
+        make_zip(filePath, fileDownloadPath + str(activities_id) + ".zip")
         # 5. 返回zip
         response = make_response(
-            send_from_directory(fileDownloadPath, str(activities_id)+".zip", as_attachment=True))
+            send_from_directory(fileDownloadPath, str(activities_id) + ".zip", as_attachment=True))
         return response
+
 
 def create_workbook(object, filePath, activities_id):
     # 创建Excel文件,不保存,直接输出
@@ -293,14 +328,14 @@ def create_workbook(object, filePath, activities_id):
     worksheet = workbook.add_worksheet("sheet")
     title = ["Activity Types", "Activity Details", "Duration Hours",
              "SelectOptions", "Level", "Age", "Gender", "LifeStage", "IncomeLevel", "Occupations",
-             "Area", "KidsType", "PetType",  "Activity Description",
+             "Area", "KidsType", "PetType", "Activity Description",
              "Learning Short Description", "Learning Details", "LearningTags", "Learning Category"]
     worksheet.write_row('A1', title)
     selectOptions = ""
     num = 2
     activities = json.loads(object.active_object)
     for Options in activities["location"]["selectOptions"]:
-        selectOptions += Options+","
+        selectOptions += Options + ","
     LearnData = Learn.query.filter(and_(Learn.active_id == activities_id)).all()
     for id in LearnData:
         learnDescription = id.name
@@ -309,10 +344,10 @@ def create_workbook(object, filePath, activities_id):
         tag = ""
         if LearnInfo['tag'] is not None:
             for Learntag in LearnInfo['tag']:
-                tag += Learntag+","
+                tag += Learntag + ","
         worksheet.write_row('O' + str(num), [str(learnDescription), str(learnDetails),
-                                str(tag[0:-1]),
-                            str(LearnInfo['category'])])
+                                             str(tag[0:-1]),
+                                             str(LearnInfo['category'])])
         num += 1
     worksheet.write_row('A2', [str(object.active),
                                str(object.active_type),
@@ -331,18 +366,20 @@ def create_workbook(object, filePath, activities_id):
                                ])
     workbook.close()
 
+
 def getFile(filePath, url, fileName):
     response = requests.get(url).content
-    with open(filePath+fileName, 'wb') as f:
+    with open(filePath + fileName, 'wb') as f:
         f.write(response)
-    print("Sucessful to download "+fileName)
+    print("Sucessful to download " + fileName)
+
 
 def make_zip(filePath, source_dir):
-  zipf = zipfile.ZipFile(source_dir, 'w')
-  pre_len = len(os.path.dirname(filePath))
-  for parent, dirnames, filenames in os.walk(filePath):
-    for filename in filenames:
-      pathfile = os.path.join(parent, filename)
-      arcname = pathfile[pre_len:].strip(os.path.sep)
-      zipf.write(pathfile, arcname)
-  zipf.close()
+    zipf = zipfile.ZipFile(source_dir, 'w')
+    pre_len = len(os.path.dirname(filePath))
+    for parent, dirnames, filenames in os.walk(filePath):
+        for filename in filenames:
+            pathfile = os.path.join(parent, filename)
+            arcname = pathfile[pre_len:].strip(os.path.sep)
+            zipf.write(pathfile, arcname)
+    zipf.close()
