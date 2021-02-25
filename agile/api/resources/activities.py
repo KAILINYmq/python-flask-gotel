@@ -100,8 +100,7 @@ class ActivitiesList(Resource):
             if startTime and endTime:
                 if startTime == endTime:
                     end = startTime.split(" ")[0] + ' 23:59:59'
-                    filterList.append(
-                        Activities.create_time >= datetime.strptime(startTime, '%Y-%m-%d  %H:%M:%S'))
+                    filterList.append(Activities.create_time >= datetime.strptime(startTime, '%Y-%m-%d  %H:%M:%S'))
                     filterList.append(Activities.create_time < datetime.strptime(end, '%Y-%m-%d  %H:%M:%S'))
                 else:
                     filterList.append(
@@ -128,6 +127,7 @@ class ActivitiesList(Resource):
                 # object = activitiesObj
                 paginate = (len(object)+size-1)//size
             datas = []
+            print("3")
             for k in object:
                 data = {}
                 data["image"] = []
@@ -155,6 +155,7 @@ class ActivitiesList(Resource):
                 status=ResposeStatus.Success, msg="OK")
         except Exception as e:
             print(e)
+            print("hahah")
             return ApiResponse(status=ResposeStatus.ParamFail, msg="参数错误!")
 
 
