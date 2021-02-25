@@ -69,6 +69,7 @@ class ActivitiesList(Resource):
         if not idea_tag:
             return activity_ids
 
+        activity_ids = set()
         ideas_query = db.session.query(Learn, Idea, Idea_lab, Tag) \
             .filter(Learn.id == Idea.learning_id) \
             .filter(Idea.id == Idea_lab.idea_id) \
