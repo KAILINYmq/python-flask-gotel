@@ -36,19 +36,24 @@ class SearchIdea(Resource):
             page = int(request.args.get("page"))
             category = int(request.args.get("category"))
             country = str(request.args.get("country"))
-            filters = []
-            if tag:
-                filters.append(Idea_lab.tag_id == tag)
-            if category:
-                filters.append(Idea_lab.tag_id == category)
-            if brand:
-                filters.append(Idea_lab.tag_id == brand)
+
+            query = session.query(Idea, User).filter(Idea.user_id == User.id)
             if country and str(country) != '0':
-                filters.append(User.country == country)
-            query = session.query(Idea, Idea_lab, User). \
-                filter(Idea.id == Idea_lab.idea_id). \
-                filter(Idea.user_id == User.id). \
-                filter(and_(*filters))
+                query = query.filter(User.country == country)
+            tag_filters = []
+            if tag:
+                tag_filters.append(Idea_lab.tag_id == tag)
+            if category:
+                tag_filters.append(Idea_lab.tag_id == category)
+            if brand:
+                tag_filters.append(Idea_lab.tag_id == brand)
+            if tag_filters:
+                idea_ids = set()
+                target_tags = session.query(Idea_lab).filter(tag_filters).all()
+                for target_tag in target_tags:
+                    idea_ids.add(target_tag.idea_id)
+                if idea_ids:
+                    query = query.filter(Idea.id.in_(idea_ids))
 
             order_criteria = Idea.update_time.desc()
             if sort_time:
@@ -61,7 +66,7 @@ class SearchIdea(Resource):
                 "totalNum": paginate
             }
             data = []
-            for value, _, _ in results:
+            for value, _ in results:
                 praise_num = session.query(func.count(distinct(Praise.id))) \
                     .filter(Praise.work_id == value.id, Praise.type == "idea", Praise.is_give == 1).scalar()
                 praise = Praise.query.filter(Praise.work_id == value.id, Praise.type == "idea",
