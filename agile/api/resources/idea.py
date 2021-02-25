@@ -293,8 +293,7 @@ class SearchIdea(Resource):
                 session.commit()
                 return ApiResponse(dicts, ResposeStatus.Success)
         except:
-            db.session.rollback()
-            return ApiResponse(status=ResposeStatus.ParamFail, msg="查询数据错误!")
+            return ApiResponse(status=ResposeStatus.ParamFail, msg="查询错误!")
 
 
 # 修改
@@ -534,7 +533,6 @@ class GetIdea(Resource):
             dict["active"] = activedict
             return ApiResponse(dict, ResposeStatus.Success)
         except:
-            db.session.rollback()
             return ApiResponse(status=ResposeStatus.ParamFail, msg="获取详情数据错误!")
 
 def SaveActiveAndIdea(userId, activeIds, datas):

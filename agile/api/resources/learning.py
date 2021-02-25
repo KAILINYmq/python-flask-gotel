@@ -352,7 +352,6 @@ class SearchLearning(Resource):
                 session.commit()
                 return ApiResponse(dicts, ResposeStatus.Success)
         except:
-            db.session.rollback()
             return ApiResponse(status=ResposeStatus.ParamFail, msg="查询数据错误!")
 
 
@@ -423,7 +422,7 @@ class Praises(Resource):
                     return ApiResponse("1", ResposeStatus.Success)
         except:
             db.session.rollback()
-            return ApiResponse(status=ResposeStatus.ParamFail, msg="点赞失败!")
+            return ApiResponse(status=ResposeStatus.ParamFail, msg="点赞错误!")
 
 
 class __SearchLearning(Resource):
