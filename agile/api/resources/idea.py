@@ -284,9 +284,7 @@ def SaveActiveAndIdea(userId, activeIds, datas):
                 vi = json.dumps(lern["videoUrls"])
                 # print(datas["activityObject"],"=====")
                 new_user = Learn(name=lern["name"], description=lern["description"], active_id=activeIds,
-                                 image=im, video=vi, user_id=userId, activityObject=str(datas["activityObject"]),
-                                 create_time=now,
-                                 update_time=now)
+                                 image=im, video=vi, user_id=userId, create_time=now, update_time=now)
                 session.add(new_user)
                 # print(datas["activityObject"], "11=====")
                 session.commit()
@@ -296,17 +294,17 @@ def SaveActiveAndIdea(userId, activeIds, datas):
                 now = time.strftime('%Y-%m-%d', time.localtime(time.time()))
                 # print(tag)
                 for value in tag:
-                    new_learn_lable = Learn_lab(idea_id=learning.id, tag_id=value, create_time=now, update_time=now,
+                    new_learn_lable = Learn_lab(learn_id=learning.id, tag_id=value, create_time=now, update_time=now,
                                                 is_delete=0)
                     session.add(new_learn_lable)
                     session.commit()
                 for value in lern["brands"]:
-                    new_learn_lable = Learn_lab(idea_id=learning.id, tag_id=value, create_time=now, update_time=now,
+                    new_learn_lable = Learn_lab(learn_id=learning.id, tag_id=value, create_time=now, update_time=now,
                                                 is_delete=0)
                     session.add(new_learn_lable)
                     session.commit()
                 # for value in lern["category"]:
-                new_learn_lable = Learn_lab(idea_id=learning.id, tag_id=lern["category"], create_time=now,
+                new_learn_lable = Learn_lab(learn_id=learning.id, tag_id=lern["category"], create_time=now,
                                             update_time=now,
                                             is_delete=0)
                 session.add(new_learn_lable)
@@ -322,7 +320,6 @@ def SaveActiveAndIdea(userId, activeIds, datas):
                         vis = json.dumps(idea["videoUrls"])
                         new_users = Idea(name=idea["name"], description=idea["description"], user_id=userId,
                                          image=ims, video=vis, learning_id=new_user.id,
-                                         activityObject=str(datas["activityObject"]),
                                          create_time=now, update_time=now)
                         session.add(new_users)
                         session.commit()
@@ -355,7 +352,7 @@ def SaveActiveAndIdea(userId, activeIds, datas):
     except exc.IntegrityError:
         db.session.rollback()
         return 2
-    except Exception:
+    except Exception as e:
         db.session.rollback()
         return 0
 
