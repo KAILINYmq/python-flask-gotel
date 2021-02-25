@@ -84,7 +84,7 @@ class SearchLearning(Resource):
                     item["video"] = []
                 query_tags = session.query(Learn_lab, Tag) \
                     .filter(Learn_lab.tag_id == Tag.id) \
-                    .filter(Learn_lab.idea_id == value.id) \
+                    .filter(Learn_lab.learn_id == value.id) \
                     .all()
                 tags = []
                 brands = []
