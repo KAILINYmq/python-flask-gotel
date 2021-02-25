@@ -34,17 +34,17 @@ class SearchIdea(Resource):
         if brand:
             results = db.session.query(Idea_lab).filter(Learn_lab.tag_id == brand).all()
             for result in results:
-                brand_results.add(result.learn_id)
+                brand_results.add(result.idea_id)
 
         if category:
             results = db.session.query(Idea_lab).filter(Learn_lab.tag_id == category).all()
             for result in results:
-                category_results.add(result.learn_id)
+                category_results.add(result.idea_id)
 
         if tag:
             results = db.session.query(Idea_lab).filter(Learn_lab.tag_id == tag).all()
             for result in results:
-                tag_results.add(result.learn_id)
+                tag_results.add(result.idea_id)
 
         return brand_results.intersection(category_results).difference(tag_results)
 
