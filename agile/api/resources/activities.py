@@ -199,7 +199,7 @@ class ActivitiesAdd(Resource):
                 active.active = args['activityTypes']
                 active.active_type = args['activityDetails']
                 active.active_time = args['durationHours']
-                active.active_object = str(args['activityObject'])
+                active.active_object = json.dumps(args['activityObject'])
                 active.description = args['activityDescription']
                 active.is_delete = 0
                 db.session.commit()
@@ -219,7 +219,7 @@ class ActivitiesAdd(Resource):
             # 新增
             try:
                 activities = Activities(active=args['activityTypes'], active_type=args['activityDetails'],
-                                        active_time=args['durationHours'], active_object=str(args['activityObject']),
+                                        active_time=args['durationHours'], active_object=json.dumps(args['activityObject']),
                                         description=args['activityDescription'], user_id=current_user.id, is_delete=0)
                 db.session.add(activities)
                 db.session.commit()
