@@ -204,7 +204,7 @@ class GetIdea(Resource):
             learndict["id"] = learn.id
             learndict["name"] = learn.name
             learndict["description"] = learn.description
-            labId = session.query(Learn_lab).filter(Learn_lab.idea_id == value.id).all()
+            labId = session.query(Learn_lab).filter(Learn_lab.learn_id == value.id).all()
             tagNamed = []
             brandNamed = []
             categoryNamed = ""
@@ -268,7 +268,7 @@ def SaveActiveAndIdea(userId, activeIds, datas):
         if datas["id"] is not None and datas["id"] > 0:
             learning = session.query(Learn).filter(Learn.active_id == datas["id"]).all()
             for learn in learning:
-                Learn_lab.query.filter(Learn_lab.idea_id == learn.id).delete()
+                Learn_lab.query.filter(Learn_lab.learn_id == learn.id).delete()
                 ideaData = Idea.query.filter(Idea.learning_id == learn.id).all()
                 for idea in ideaData:
                     Idea_lab.query.filter(Idea_lab.idea_id == idea.id).delete()

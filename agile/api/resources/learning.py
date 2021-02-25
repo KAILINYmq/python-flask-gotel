@@ -117,7 +117,7 @@ class UpdataLearn(Resource):
         learn.name = data["name"]
         learn.description = data["description"]
         learn.update_time = now
-        session.query(Learn_lab).filter(Learn_lab.idea_id == data["id"]).delete()
+        session.query(Learn_lab).filter(Learn_lab.learn_id == data["id"]).delete()
         # session.query(Learn_type).filter(Learn_type.idea_id == data["id"]).delete()
         # session.query(Learn_name).filter(Learn_name.idea_id == data["id"]).delete()
         session.commit()
@@ -336,7 +336,7 @@ def SecetLearnInfo(id):
             dict["video"] = []
         dict["image"] = img
         dict["video"] = vio
-        labId = session.query(Learn_lab).filter(Learn_lab.idea_id == value.id).all()
+        labId = session.query(Learn_lab).filter(Learn_lab.learn_id == value.id).all()
         tagName = []
         brandName = []
         categoryName = ""
