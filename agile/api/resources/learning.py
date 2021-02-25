@@ -231,19 +231,24 @@ class SearchLearning(Resource):
                 return ApiResponse(dicts, ResposeStatus.Success)
             else:
                 session = db.session
-                tagnum = []
-                # brandnum = []
-                # categorynum = []
+                tagnums = []
+                brandnum = []
+                categorynum = []
                 tagList = session.query(Learn_lab).filter(Learn_lab.tag_id == tag).all()
                 for val in tagList:
-                    tagnum.append(val.idea_id)
+                    tagnums.append(val.idea_id)
                 brandList = session.query(Learn_lab).filter(Learn_lab.tag_id == brand).all()
                 for val in brandList:
-                    tagnum.append(val.idea_id)
-                categoryList = session.query(Learn_type).filter(Learn_lab.tag_id == category).all()
+                    brandnum.append(val.idea_id)
+                categoryList = session.query(Learn_lab).filter(Learn_lab.tag_id == category).all()
                 for val in categoryList:
-                    tagnum.append(val.idea_id)
-
+                    categorynum.append(val.idea_id)
+                if len(categorynum)==0:
+                    tagnum = brandnum
+                if len(brandnum)==0:
+                    tagnum = categorynum
+                if len(categorynum)!= 0 and len(brandnum)!=0:
+                    tagnum = list(set(categorynum).intersection(set(brandnum)))
                 # countTotle = session.query(func.count(distinct(Learn.id))).filter(Learn.id.in_(tagnum)).scalar()
                 dicts = {}
                 result_six = []
@@ -348,8 +353,6 @@ class SearchLearning(Resource):
                 return ApiResponse(dicts, ResposeStatus.Success)
         except:
             db.session.rollback()
-        finally:
-            db.session.close()
 
 
 # 修改
@@ -419,8 +422,6 @@ class Praises(Resource):
                     return ApiResponse("1", ResposeStatus.Success)
         except:
             db.session.rollback()
-        finally:
-            db.session.close()
 
 
 class __SearchLearning(Resource):
