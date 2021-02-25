@@ -120,7 +120,7 @@ class ActivitiesList(Resource):
                 # TODO page
                 # 查询
                 print("开始查询learn和idea")
-                activitiesObj = self.SelectLearnIdea(learn=learn, idea=idea)
+                activitiesObj = self.SelectLearn(learn=learn, idea=idea)
                 object = []
                 # 对数据进行处理，只保留分页需要的数据
                 count = 0
