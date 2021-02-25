@@ -190,7 +190,7 @@ def SelectLearnIdeaList(id):
                 if ltag is not None:
                     LearnTags.append(ltag.label)
         for i in IdeaData:
-            idealab = Idea_lab.query.filter(Idea_lab.idea_id == l.id).all()
+            idealab = Idea_lab.query.filter(Idea_lab.idea_id == i.id).all()
             if idealab is not None:
                 for ilab in idealab:
                     itag = Tag.query.filter(and_(Tag.id == ilab.tag_id, Tag.label_type == "Idea")).first()
