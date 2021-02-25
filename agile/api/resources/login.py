@@ -160,12 +160,15 @@ class GetCategory(Resource):
             for category in db.session.query(Category).all():
                 # 获取所有属于本category的同地区的用户id
                 tempSameCategoryUserId = getCategoryUserId(category, userCountry)
-
                 # 拿着这个user id去learning表查询所有涉及到这些user id的数据
+                # print("当前category是：" + str(category))
+                # print("属于当前category的user id是：" + str(tempSameCategoryUserId))
                 count = 0
                 if type == "learn":
                     for userId in tempSameCategoryUserId:
                         count += db.session.query(Learn).filter_by(user_id=userId).count()
+                        # print("当前learn count是：" + str(count))
+                        # print("当前userId是：" + str(userId))
                         # print("当前count是：" + str(count))
                         # print("当前用户Id是：" + str(userId))
                         # print("属于这个用户id的learn数据是：" + str(db.session.query(Learn).filter_by(user_id=userId).all()))
@@ -201,7 +204,7 @@ class GetBrand(Resource):
             # print("要获取的Type是：" + type)
             # print("用户地区是：" + userCountry)
 
-            if category is None or category == "ALL":
+            if category is None or category == "ALL" or category == "":
                 category = "all"
                 # print("category是：" + category)
                 # print("进入函数")
@@ -220,7 +223,7 @@ class GetBrand(Resource):
                     # 获取所有属于本category的同地区的用户id
                     tempSameCategoryUserId = getCategoryUserId(tempCategory, userCountry)
                     # print("退出函数")
-            # print("已经获取到user id list：" + str(tempSameCategoryUserId))
+            print("已经获取到user id list：" + str(tempSameCategoryUserId))
 
             # 拿着这个user id去idea和learn表查询所有涉及到这些user id的数据
             typeList = []
@@ -237,7 +240,7 @@ class GetBrand(Resource):
                 for tag in typeList:
                     # print("当前的tag_id是：" + str(tag.id))
                     # 获取到关联表中等于idea_id的data
-                    searchData.extend(db.session.query(Learn_lab).filter_by(idea_id=tag.id).all())
+                    searchData.extend(db.session.query(Learn_lab).filter_by(learn_id=tag.id).all())
                 # print("筛选后的learn数据是：" + str(searchData) + "，数量是：" + str(len(searchData)))
 
                 for searchTag in searchData:
@@ -398,6 +401,7 @@ def getCategoryUserId(category, userCountry):
             # 通过category id在department category中查询出对应的department id
             # print("当前的category名字是:" + category.name)
             # print("当前的categoryId是:" + str(category.id))
+            # print("category:" + str(category.name))
             tempDepartmentId = db.session.query(department_category).filter_by(category_id=category.id).all()
             # print("查关联表所有与当前category_id关联的数据：" + str(tempDepartmentId))
             # 通过department id来查询涉及到了哪些用户   左边department_id 右边category id

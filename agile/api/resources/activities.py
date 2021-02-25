@@ -20,7 +20,7 @@ class ActivitiesSchema(ma.ModelSchema):
     class Meta:
         include_fk = False
         fields = (
-        "id", "active", "active_type", "active_time", "active_object", "description", "image", "video", "status")
+            "id", "active", "active_type", "active_time", "active_object", "description", "image", "video", "status")
         model = Activities
         sqla_session = db.session
 
@@ -52,17 +52,35 @@ class ActivitiesList(Resource):
                 return True
         return False
 
-    def SelectLearnIdea(self, learn, idea):
-        object = []
-        print("learn:" + learn)
-        LearnData = Learn.query.filter(Learn.name == learn).all()
-        for l in LearnData:
-            IdeaData = Idea.query.filter(Idea.name == idea).all()
-            object.append(Activities.query.filter(Activities.id == l.active_id).first())
-            for i in IdeaData:
-                lean = Learn.query.filter(Learn.id == i.learning_id).first()
-                object.append(Activities.query.filter(Activities.id == lean.active_id).first())
-        return list(filter(None, object))
+    def select_by_learn_ideas(self, learn_tag, idea_tag):
+        if not learn_tag and not idea_tag:
+            return None
+        learning_ids = set()
+        activity_ids = set()
+        if learn_tag:
+            learnings_query = db.session.query(Learn, Learn_lab, Tag) \
+                .filter(Learn.id == Learn_lab.learn_id) \
+                .filter(Learn_lab.tag_id == Tag.id) \
+                .filter(Tag.label == learn_tag) \
+                .filter(Tag.label_type == 'Learnings')
+            for learn, _, _ in learnings_query.all():
+                learning_ids.add(learn.id)
+                activity_ids.add(learn.active_id)
+        if not idea_tag:
+            return activity_ids
+
+        ideas_query = db.session.query(Learn, Idea, Idea_lab, Tag) \
+            .filter(Learn.id == Idea.learning_id) \
+            .filter(Idea.id == Idea_lab.idea_id) \
+            .filter(Idea_lab.tag_id == Tag.id) \
+            .filter(Tag.label == idea_tag) \
+            .filter(Tag.label_type == 'Idea')
+        if learning_ids:
+            ideas_query = ideas_query.filter(Learn.id.in_(learning_ids))
+        for learn, idea, _, _ in ideas_query.all():
+            activity_ids.add(learn.active_id)
+
+        return activity_ids
 
     def get(self):
         # 查询活动数据
@@ -94,6 +112,14 @@ class ActivitiesList(Resource):
                 size = 10
             page = int(page)
             size = int(size)
+            activity_ids = self.select_by_learn_ideas(learn, idea)
+            if activity_ids is not None and len(activity_ids) == 0:
+                return ApiResponse(obj={
+                    "activitiesData": [],
+                    "total"         : 0
+                })
+            if activity_ids:
+                filterList.append(Activities.id.in_(activity_ids))
             if name:
                 filterList.append(Activities.active == name)
             if _type:
@@ -108,34 +134,15 @@ class ActivitiesList(Resource):
                         Activities.create_time >= datetime.strptime(startTime, '%Y-%m-%d  %H:%M:%S'))
                     filterList.append(
                         Activities.create_time <= datetime.strptime(endTime, '%Y-%m-%d  %H:%M:%S'))
-            object = Activities.query\
-                .filter(and_(*filterList))\
-                .order_by(Activities.update_time.desc()) \
+
+            query = Activities.query.filter(and_(*filterList))
+
+            results = query.order_by(Activities.update_time.desc()) \
                 .offset((page - 1) * size) \
                 .limit(size)
-            paginate = Activities.query.filter(and_(*filterList)).paginate(page, size).pages
-            print("开始进入learn和idea")
-            # learn  idea
-            if not name and (learn or idea):
-                # TODO page
-                # 查询
-                print("开始查询learn和idea")
-                activitiesObj = self.SelectLearn(learn=learn, idea=idea)
-                object = []
-                # 对数据进行处理，只保留分页需要的数据
-                count = 0
-                countPage = 1
-                for i in activitiesObj:
-                    if countPage == page:
-                        object.append(i)
-
-                    count += 1
-                    if count % size == 0:
-                        countPage += 1
-                # object = activitiesObj
-                paginate = (len(object)+size-1)//size
+            paginate = query.paginate(page, size).pages
             datas = []
-            for k in object:
+            for k in results:
                 data = {}
                 data["image"] = []
                 data["video"] = []
@@ -157,7 +164,7 @@ class ActivitiesList(Resource):
                 datas.append(data)
             return ApiResponse(obj={
                 "activitiesData": datas,
-                "total": paginate
+                "total"         : paginate
             },
                 status=ResposeStatus.Success, msg="OK")
         except Exception as e:
@@ -170,13 +177,13 @@ def SelectLearnIdeaList(id):
     Video = []
     IdeaTag = []
     LearnTags = []
-    print(id)
     LearnData = Learn.query.filter(and_(Learn.active_id == id)).all()
     if LearnData is None:
-        return set(filter(None, Image)), set(filter(None, Video)), set(filter(None, IdeaTag)), set(filter(None, LearnTags))
+        return set(filter(None, Image)), set(filter(None, Video)), set(filter(None, IdeaTag)), set(
+            filter(None, LearnTags))
     for l in LearnData:
         IdeaData = Idea.query.filter(and_(Idea.learning_id == l.id)).all()
-        learnlab  = Learn_lab.query.filter(Learn_lab.learn_id == l.id).all()
+        learnlab = Learn_lab.query.filter(Learn_lab.learn_id == l.id).all()
         if learnlab is not None:
             for llab in learnlab:
                 ltag = Tag.query.filter(and_(Tag.id == llab.tag_id, Tag.label_type == "Learnings")).first()
@@ -188,8 +195,7 @@ def SelectLearnIdeaList(id):
                 for ilab in idealab:
                     itag = Tag.query.filter(and_(Tag.id == ilab.tag_id, Tag.label_type == "Idea")).first()
                     if itag is not None:
-                        LearnTags.append(itag.label)
-            IdeaTag.append(i.name)
+                        IdeaTag.append(itag.label)
             Image.append(i.image)
             Video.append(i.video)
         Image.append(l.image)
@@ -243,7 +249,9 @@ class ActivitiesAdd(Resource):
                 db.session.commit()
                 type = SaveActiveAndIdea(current_user.id, active.id, args)
                 if type == 1:
-                    return ApiResponse(obj=json.dumps({"id": active.id}), status=ResposeStatus.Success, msg="OK")
+                    return ApiResponse(obj=json.dumps({
+                        "id": active.id
+                    }), status=ResposeStatus.Success, msg="OK")
                 elif type == 2:
                     db.session.rollback()
                     return ApiResponse(status=ResposeStatus.ParamFail, msg="Not Have Key!")
@@ -257,14 +265,17 @@ class ActivitiesAdd(Resource):
             # 新增
             try:
                 activities = Activities(active=args['activityTypes'], active_type=args['activityDetails'],
-                                        active_time=args['durationHours'], active_object=json.dumps(args['activityObject']),
+                                        active_time=args['durationHours'],
+                                        active_object=json.dumps(args['activityObject']),
                                         description=args['activityDescription'], user_id=current_user.id, is_delete=0)
                 db.session.add(activities)
                 db.session.commit()
                 # if SaveActiveAndIdea(current_user.id, activities.id, args) == 1:
                 type = SaveActiveAndIdea(current_user.id, activities.id, args)
                 if type == 1:
-                    return ApiResponse(obj=json.dumps({"id": activities.id}), status=ResposeStatus.Success, msg="OK")
+                    return ApiResponse(obj=json.dumps({
+                        "id": activities.id
+                    }), status=ResposeStatus.Success, msg="OK")
                 elif type == 2:
                     db.session.rollback()
                     return ApiResponse(status=ResposeStatus.ParamFail, msg="Not Have Key!")
