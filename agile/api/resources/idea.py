@@ -31,14 +31,14 @@ class SearchIdea(Resource):
         final_result_set = None
         if brand:
             brand_results = set()
-            results = db.session.query(Idea_lab).filter(Learn_lab.tag_id == brand).all()
+            results = db.session.query(Idea_lab).filter(Idea_lab.tag_id == brand).all()
             for result in results:
                 brand_results.add(result.idea_id)
             final_result_set = brand_results
 
         if category:
             category_results = set()
-            results = db.session.query(Idea_lab).filter(Learn_lab.tag_id == category).all()
+            results = db.session.query(Idea_lab).filter(Idea_lab.tag_id == category).all()
             for result in results:
                 category_results.add(result.idea_id)
             if final_result_set is not None:
@@ -48,7 +48,7 @@ class SearchIdea(Resource):
 
         if tag:
             tag_results = set()
-            results = db.session.query(Idea_lab).filter(Learn_lab.tag_id == tag).all()
+            results = db.session.query(Idea_lab).filter(Idea_lab.tag_id == tag).all()
             for result in results:
                 tag_results.add(result.idea_id)
             if final_result_set is not None:
