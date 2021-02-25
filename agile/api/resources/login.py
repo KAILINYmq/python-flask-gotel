@@ -201,7 +201,7 @@ class GetBrand(Resource):
             # print("要获取的Type是：" + type)
             # print("用户地区是：" + userCountry)
 
-            if category is None or category == "all":
+            if category is None or category == "ALL":
                 category = "all"
                 # print("category是：" + category)
                 # print("进入函数")

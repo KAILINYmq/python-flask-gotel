@@ -103,7 +103,6 @@ class Feedback(Resource):
     """
     method_decorators = [jwt_required]
 
-    @jwt_required
     def get(self):
         try:
             # 1. 获取参数，参数init
