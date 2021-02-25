@@ -54,13 +54,15 @@ class SearchIdea(Resource):
             user_id = current_user.id
             tag = int(request.args.get("tag"))
             brand = int(request.args.get("brand"))
-            sort_time = int(request.args.get("sort"))
+            sort = str(request.args.get("sort"))
             size = int(request.args.get("size"))
             page = int(request.args.get("page"))
             category = int(request.args.get("category"))
             country = str(request.args.get("country"))
 
-            query = session.query(Idea, User).filter(Idea.user_id == User.id)
+            sub_query = session.query(Idea.id, func.sum(Praise.is_give).label("praiseCount")) \
+                .filter(Praise.work_id == Idea.id, Praise.type == "idea").group_by(Idea.id).subquery()
+            query = session.query(Idea, User, sub_query).filter(Idea.user_id == User.id, Idea.id == sub_query.c.id)
             if country and str(country) != '0':
                 query = query.filter(User.country == country)
             idea_ids = self.get_idea_ids(brand, category, tag)
@@ -73,8 +75,8 @@ class SearchIdea(Resource):
                 query = query.filter(Idea.id.in_(idea_ids))
 
             order_criteria = Idea.update_time.desc()
-            if sort_time:
-                order_criteria = Idea.update_time.asc()
+            if "praise" == sort:
+                order_criteria = sub_query.c.praiseCount.desc()
             results = query.order_by(order_criteria) \
                 .offset((page - 1) * size) \
                 .limit(size)
@@ -83,9 +85,9 @@ class SearchIdea(Resource):
                 "totalNum": paginate
             }
             data = []
-            for value, _ in results:
-                praise_num = session.query(func.count(distinct(Praise.id))) \
-                    .filter(Praise.work_id == value.id, Praise.type == "idea", Praise.is_give == 1).scalar()
+            for value, _, _, praiseCount in results:
+                # praise_num = session.query(func.count(distinct(Praise.id))) \
+                #     .filter(Praise.work_id == value.id, Praise.type == "idea", Praise.is_give == 1).scalar()
                 praise = Praise.query.filter(Praise.work_id == value.id, Praise.type == "idea",
                                              Praise.user_id == str(user_id), Praise.is_give == 1).first()
                 item = {}
@@ -93,7 +95,7 @@ class SearchIdea(Resource):
                     item["isPraise"] = 1
                 else:
                     item["isPraise"] = 0
-                item["praiseNum"] = praise_num
+                item["praiseNum"] = praiseCount
                 item["id"] = value.id
                 item["name"] = value.name
                 item["description"] = value.description
@@ -126,7 +128,8 @@ class SearchIdea(Resource):
                 data.append(item)
             response["data"] = data
             return ApiResponse(response, ResposeStatus.Success)
-        except:
+        except Exception as e:
+            print(e)
             return ApiResponse(status=ResposeStatus.ParamFail, msg="查询错误!")
 
 
