@@ -25,6 +25,29 @@ from agile.models import Idea, Idea_lab, Tag, Praise, Learn, Activities, Learn_l
 class SearchIdea(Resource):
     method_decorators = [jwt_required]
 
+    def get_idea_ids(self, brand, category, tag):
+        if not brand and not category and not tag:
+            return None
+        brand_results = set()
+        category_results = set()
+        tag_results = set()
+        if brand:
+            results = db.session.query(Idea_lab).filter(Learn_lab.tag_id == brand).all()
+            for result in results:
+                brand_results.add(result.learn_id)
+
+        if category:
+            results = db.session.query(Idea_lab).filter(Learn_lab.tag_id == category).all()
+            for result in results:
+                category_results.add(result.learn_id)
+
+        if tag:
+            results = db.session.query(Idea_lab).filter(Learn_lab.tag_id == tag).all()
+            for result in results:
+                tag_results.add(result.learn_id)
+
+        return brand_results.intersection(category_results).difference(tag_results)
+
     def get(self):
         session = db.session
         try:
@@ -40,20 +63,14 @@ class SearchIdea(Resource):
             query = session.query(Idea, User).filter(Idea.user_id == User.id)
             if country and str(country) != '0':
                 query = query.filter(User.country == country)
-            tag_filters = []
-            if tag:
-                tag_filters.append(Idea_lab.tag_id == tag)
-            if category:
-                tag_filters.append(Idea_lab.tag_id == category)
-            if brand:
-                tag_filters.append(Idea_lab.tag_id == brand)
-            if tag_filters:
-                idea_ids = set()
-                target_tags = session.query(Idea_lab).filter(and_(*tag_filters)).all()
-                for target_tag in target_tags:
-                    idea_ids.add(target_tag.idea_id)
-                if idea_ids:
-                    query = query.filter(Idea.id.in_(idea_ids))
+            idea_ids = self.get_idea_ids(brand, category, tag)
+            if idea_ids is not None and len(idea_ids) == 0:
+                return ApiResponse({
+                    "totalNum": 0,
+                    "data"    : []
+                }, ResposeStatus.Success)
+            if idea_ids:
+                query = query.filter(Idea.id.in_(idea_ids))
 
             order_criteria = Idea.update_time.desc()
             if sort_time:

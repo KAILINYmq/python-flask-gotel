@@ -24,6 +24,29 @@ from agile.models import Learn, Learn_lab, Learn_type, Tag, Praise, Idea, Activi
 class SearchLearning(Resource):
     method_decorators = [jwt_required]
 
+    def get_learning_ids(self, brand, category, tag):
+        if not brand and not category and not tag:
+            return None
+        brand_results = set()
+        category_results = set()
+        tag_results = set()
+        if brand:
+            results = db.session.query(Learn_lab).filter(Learn_lab.tag_id == brand).all()
+            for result in results:
+                brand_results.add(result.learn_id)
+
+        if category:
+            results = db.session.query(Learn_lab).filter(Learn_lab.tag_id == category).all()
+            for result in results:
+                category_results.add(result.learn_id)
+
+        if tag:
+            results = db.session.query(Learn_lab).filter(Learn_lab.tag_id == tag).all()
+            for result in results:
+                tag_results.add(result.learn_id)
+
+        return brand_results.intersection(category_results).difference(tag_results)
+
     def get(self):
         session = db.session
         try:
@@ -38,20 +61,14 @@ class SearchLearning(Resource):
             query = session.query(Learn, User).filter(Learn.user_id == User.id)
             if country and str(country) != '0':
                 query = query.filter(User.country == country)
-            tag_filters = []
-            if tag:
-                tag_filters.append(Learn_lab.tag_id == tag)
-            if category:
-                tag_filters.append(Learn_lab.tag_id == category)
-            if brand:
-                tag_filters.append(Learn_lab.tag_id == brand)
-            if tag_filters:
-                learn_ids = set()
-                target_tags = session.query(Learn_lab).filter(and_(*tag_filters)).all()
-                for target_tag in target_tags:
-                    learn_ids.add(target_tag.learn_id)
-                if learn_ids:
-                    query = query.filter(Learn.id.in_(learn_ids))
+            learning_ids = self.get_learning_ids(brand, category, tag)
+            if learning_ids is not None and len(learning_ids) == 0:
+                return ApiResponse({
+                    "totalNum": 0,
+                    "data"    : []
+                }, ResposeStatus.Success)
+            if learning_ids:
+                query = query.filter(Learn.id.in_(learning_ids))
 
             order_criteria = Learn.update_time.desc()
             if sort_time:
