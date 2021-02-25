@@ -1,7 +1,7 @@
 from flask import request, make_response, send_from_directory
 from flask_restplus import Resource, reqparse
 from agile.commons.api_response import ResposeStatus, ApiResponse
-from agile.models import Activities, Type_table, Details_table, Learn, Idea
+from agile.models import Activities, Type_table, Details_table, Learn, Idea, Learn_lab, Idea_lab, Tag
 from agile.extensions import ma, db
 from agile import PROJECT_ROOT
 from sqlalchemy import and_
@@ -54,6 +54,7 @@ class ActivitiesList(Resource):
 
     def SelectLearnIdea(self, learn, idea):
         object = []
+        print("learn:" + learn)
         LearnData = Learn.query.filter(Learn.name == learn).all()
         for l in LearnData:
             IdeaData = Idea.query.filter(Idea.name == idea).all()
@@ -113,10 +114,13 @@ class ActivitiesList(Resource):
                 .offset((page - 1) * size) \
                 .limit(size)
             paginate = Activities.query.filter(and_(*filterList)).paginate(page, size).pages
+            print("开始进入learn和idea")
             # learn  idea
             if not name and (learn or idea):
                 # TODO page
-                activitiesObj = self.SelectLearnIdea(learn=learn, idea=idea)
+                # 查询
+                print("开始查询learn和idea")
+                activitiesObj = self.SelectLearn(learn=learn, idea=idea)
                 object = []
                 # 对数据进行处理，只保留分页需要的数据
                 count = 0
@@ -140,7 +144,7 @@ class ActivitiesList(Resource):
                 data["activeType"] = k.active_type
                 data["description"] = k.description
                 # TODO
-                image, video, data["ideaTags"], data["learnTags"] = SelectLearnIdea(k.id)
+                image, video, data["ideaTags"], data["learnTags"] = SelectLearnIdeaList(k.id)
                 img = re.findall('GOTFL[^\"]*', str(image))
                 vid = re.findall('GOTFL[^\"]*', str(video))
                 if img is not None:
@@ -161,12 +165,46 @@ class ActivitiesList(Resource):
             return ApiResponse(status=ResposeStatus.ParamFail, msg="参数错误!")
 
 
+def SelectLearnIdeaList(id):
+    Image = []
+    Video = []
+    IdeaTag = []
+    LearnTags = []
+    print(id)
+    # LearnData = []
+    # try:
+    LearnData = Learn.query.filter(and_(Learn.active_id == id)).all()
+    # except Exception:
+    if LearnData is None:
+        print("cuo")
+        return set(filter(None, Image)), set(filter(None, Video)), set(filter(None, IdeaTag)), set(filter(None, LearnTags))
+    for l in LearnData:
+        IdeaData = Idea.query.filter(and_(Idea.learning_id == l.id)).all()
+        learnlab  = Learn_lab.query.filter(Learn_lab.idea_id == l.id).all()
+        for llab in learnlab:
+            ltag = Tag.query.filter(and_(Tag.id == llab.tag_id, Tag.label_type == "Learnings")).first()
+            LearnTags.append(ltag.label)
+        for i in IdeaData:
+            idealab = Idea_lab.query.filter(Idea_lab.idea_id == l.id).all()
+            for ilab in idealab:
+                itag = Tag.query.filter(and_(Tag.id == ilab.tag_id, Tag.label_type == "Idea")).first()
+                LearnTags.append(itag.label)
+            IdeaTag.append(i.name)
+            Image.append(i.image)
+            Video.append(i.video)
+        Image.append(l.image)
+        Video.append(l.video)
+    return set(filter(None, Image)), set(filter(None, Video)), set(filter(None, IdeaTag)), set(filter(None, LearnTags))
+
+
 def SelectLearnIdea(id):
     Image = []
     Video = []
     IdeaTag = []
     LearnTags = []
+    # 查询到的所有的Learn
     LearnData = Learn.query.filter(and_(Learn.active_id == id)).all()
+    print(LearnData)
     for l in LearnData:
         IdeaData = Idea.query.filter(and_(Idea.learning_id == l.id)).all()
         for i in IdeaData:
