@@ -382,7 +382,7 @@ def getCategoryUserId(category, userCountry):
             # print("当前的category名字是:" + category.name)
             # print("当前的categoryId是:" + str(category.id))
             tempDepartmentId = db.session.query(department_category).all()
-            print("查关联表所有与当前category_id关联的数据：" + str(tempDepartmentId))
+            # print("查关联表所有与当前category_id关联的数据：" + str(tempDepartmentId))
             # 通过department id来查询涉及到了哪些用户   左边department_id 右边category id
             tempSameCategoryUserId = set()
             for j in tempDepartmentId:
@@ -401,9 +401,9 @@ def getCategoryUserId(category, userCountry):
             # 通过category id在department category中查询出对应的department id
             # print("当前的category名字是:" + category.name)
             # print("当前的categoryId是:" + str(category.id))
-            print("category:" + str(category.name))
+            # print("category:" + str(category.name))
             tempDepartmentId = db.session.query(department_category).filter_by(category_id=category.id).all()
-            print("查关联表所有与当前category_id关联的数据：" + str(tempDepartmentId))
+            # print("查关联表所有与当前category_id关联的数据：" + str(tempDepartmentId))
             # 通过department id来查询涉及到了哪些用户   左边department_id 右边category id
             tempSameCategoryUserId = set()
             for j in tempDepartmentId:
