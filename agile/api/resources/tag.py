@@ -101,7 +101,7 @@ class Feedback(Resource):
     page: 第几页
     size: 每页几条数据
     """
-    # method_decorators = [jwt_required]
+    method_decorators = [jwt_required]
 
     def get(self):
 
@@ -136,7 +136,7 @@ class Feedback(Resource):
             result = {}
             feedbackData = []
 
-            superStatus = db.session.query(User).filter_by(id=userId).first_or_404().is_supervisor
+            superStatus = db.session.query(User).filter_by(id=current_user.id).first_or_404().is_supervisor
 
             if superStatus:
                 if status == "3":
