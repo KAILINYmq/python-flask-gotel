@@ -49,7 +49,7 @@ class SearchIdea(Resource):
                 tag_filters.append(Idea_lab.tag_id == brand)
             if tag_filters:
                 idea_ids = set()
-                target_tags = session.query(Idea_lab).filter(tag_filters).all()
+                target_tags = session.query(Idea_lab).filter(and_(*tag_filters)).all()
                 for target_tag in target_tags:
                     idea_ids.add(target_tag.idea_id)
                 if idea_ids:

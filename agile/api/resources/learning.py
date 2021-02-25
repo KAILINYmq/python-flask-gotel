@@ -47,7 +47,7 @@ class SearchLearning(Resource):
                 tag_filters.append(Learn_lab.tag_id == brand)
             if tag_filters:
                 learn_ids = set()
-                target_tags = session.query(Learn_lab).filter(tag_filters).all()
+                target_tags = session.query(Learn_lab).filter(and_(*tag_filters)).all()
                 for target_tag in target_tags:
                     learn_ids.add(target_tag.learn_id)
                 if learn_ids:
