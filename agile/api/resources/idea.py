@@ -60,8 +60,9 @@ class SearchIdea(Resource):
             category = int(request.args.get("category"))
             country = str(request.args.get("country"))
 
-            sub_query = session.query(Idea.id, func.sum(Praise.is_give).label("praiseCount")) \
-                .filter(Praise.work_id == Idea.id, Praise.type == "idea").group_by(Idea.id).subquery()
+            sub_query = session.query(Idea.id, func.coalesce(func.sum(Praise.is_give), 0).label("praiseCount")) \
+                .join(Praise, and_(Praise.work_id == Idea.id, Praise.type == "idea"), full=True) \
+                .group_by(Idea.id).subquery()
             query = session.query(Idea, User, sub_query).filter(Idea.user_id == User.id, Idea.id == sub_query.c.id)
             if country and str(country) != '0':
                 query = query.filter(User.country == country)

@@ -58,8 +58,9 @@ class SearchLearning(Resource):
             page = int(request.args.get("page"))
             category = int(request.args.get("category"))
             country = str(request.args.get("country"))
-            sub_query = session.query(Idea.id, func.sum(Praise.is_give).label("praiseCount")) \
-                .filter(Praise.work_id == Idea.id, Praise.type == "learning").group_by(Idea.id).subquery()
+            sub_query = session.query(Learn.id, func.coalesce(func.sum(Praise.is_give), 0).label("praiseCount"))\
+                .join(Praise, and_(Praise.work_id == Learn.id, Praise.type == "learning"), full=True) \
+                .group_by(Learn.id).subquery()
             query = session.query(Learn, User, sub_query)\
                 .filter(Learn.user_id == User.id, Learn.id == sub_query.c.id)
             if country and str(country) != '0':
