@@ -95,6 +95,7 @@ class GetSplitTotal(Resource):
 
     def get(self):
         try:
+            print("hzhzh")
             result = {}
             activityType = request.args.get("type")
             userId = request.args.get("userId")
@@ -337,10 +338,12 @@ def splitTotalCompany(dateType, data, tab):
         frontTime = datetime.date.today()
         frontTime = datetime.datetime(year=frontTime.year, month=1, day=1)
         month = relativedelta(months=- 1)
+        print(data+"hahaha")
         for i in range(12):
             behindTime = frontTime - month
             # print(str(frontTime) + " - " + str(month) + " = " + str(behindTime))
             # 对数据进行筛选
+
             for j in data:
                 count += j.filter(
                     tab.creat_time.between(frontTime, behindTime)).count()

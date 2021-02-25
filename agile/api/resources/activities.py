@@ -333,7 +333,7 @@ def create_workbook(object, filePath, activities_id):
     worksheet.write_row('A1', title)
     selectOptions = ""
     num = 2
-    activities = json.loads(object.active_object)
+    activities = json.loads(object.active_object.replace("'", "\""))
     for Options in activities["location"]["selectOptions"]:
         selectOptions += Options + ","
     LearnData = Learn.query.filter(and_(Learn.active_id == activities_id)).all()
