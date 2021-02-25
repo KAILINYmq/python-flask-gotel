@@ -93,9 +93,9 @@ class ActivitiesList(Resource):
                 size = 10
             page = int(page)
             size = int(size)
-            if name is not "":
+            if name:
                 filterList.append(Activities.active == name)
-            if _type is not "":
+            if _type:
                 filterList.append(Activities.active_type == _type)
             if startTime and endTime:
                 if startTime == endTime:
@@ -110,7 +110,7 @@ class ActivitiesList(Resource):
             object = Activities.query.filter(and_(*filterList)).offset((page - 1) * size).limit(size)
             paginate = Activities.query.filter(and_(*filterList)).paginate(page, size).pages
             # learn  idea
-            if name is "" and (learn is not "" or idea is not ""):
+            if not name and (learn or idea):
                 # TODO page
                 activitiesObj = self.SelectLearnIdea(learn=learn, idea=idea)
                 object = []
