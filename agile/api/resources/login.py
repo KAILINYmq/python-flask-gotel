@@ -343,6 +343,7 @@ def splitTotalCompany(dateType, data, tab):
             behindTime = frontTime - month
             # print(str(frontTime) + " - " + str(month) + " = " + str(behindTime))
             # 对数据进行筛选
+
             for j in data:
                 count += j.filter(
                     tab.creat_time.between(frontTime, behindTime)).count()

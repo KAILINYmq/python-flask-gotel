@@ -100,8 +100,7 @@ class ActivitiesList(Resource):
             if startTime and endTime:
                 if startTime == endTime:
                     end = startTime.split(" ")[0] + ' 23:59:59'
-                    filterList.append(
-                        Activities.create_time >= datetime.strptime(startTime, '%Y-%m-%d  %H:%M:%S'))
+                    filterList.append(Activities.create_time >= datetime.strptime(startTime, '%Y-%m-%d  %H:%M:%S'))
                     filterList.append(Activities.create_time < datetime.strptime(end, '%Y-%m-%d  %H:%M:%S'))
                 else:
                     filterList.append(
@@ -333,7 +332,7 @@ def create_workbook(object, filePath, activities_id):
     worksheet.write_row('A1', title)
     selectOptions = ""
     num = 2
-    activities = json.loads(object.active_object)
+    activities = json.loads(object.active_object.replace("'", "\""))
     for Options in activities["location"]["selectOptions"]:
         selectOptions += Options + ","
     LearnData = Learn.query.filter(and_(Learn.active_id == activities_id)).all()
