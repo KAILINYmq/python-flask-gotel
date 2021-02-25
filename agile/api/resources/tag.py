@@ -101,64 +101,58 @@ class Feedback(Resource):
     page: 第几页
     size: 每页几条数据
     """
-    method_decorators = [jwt_required]
+    # method_decorators = [jwt_required]
 
     def get(self):
+
         try:
             # 1. 获取参数，参数init
-            status = request.args.get("status")
-            startTime = request.args.get("startTime")
-            endTime = request.args.get("endTime")
-            userId = request.args.get("userId")
-            page = request.args.get("page")
-            size = request.args.get("size")
+            status = request.args.get("status", default="3", type=str)
+            startTime = request.args.get("startTime", default="2020-1-1", type=str)
+            endTime = request.args.get("endTime", default=time.strftime("%Y-%m-%d", time.localtime()), type=str)
+            userId = request.args.get("userId", default=-1, type=int)
+            page = request.args.get("page", default=-1, type=int)
+            size = request.args.get("size", default=-1, type=int)
 
-            # 校验参数
-            if status is None or status == "":
+            # print("status:" + str(status))
+            # print("startTime:" + str(startTime))
+            # print("endTime:" + str(endTime))
+            # print("userId:" + str(userId))
+            # print("page:" + str(page))
+            # print("size:" + str(size))
+
+            if status == "":
                 status = "3"
-
-            if startTime is None or startTime == "":
+            if startTime == "":
                 startTime = "2020-1-1"
-
-            if endTime is None or endTime == "":
+            if endTime == "":
                 endTime = time.strftime("%Y-%m-%d", time.localtime())
-
-            if page is None or size is None or int(page) <= 0 or int(size) <= 0:
+            if page <= 0 or size <= 0:
                 return ApiResponse("page or size parm have mistake.", ResposeStatus.Fail)
-
-            if userId is None or userId == "":
-                return ApiResponse("user is not found!",ResposeStatus.Fail)
-
-            size = int(size)
-            page = int(page)
+            if userId <= 0:
+                return ApiResponse("user is not found!", ResposeStatus.Fail)
 
             # 通过参数来查询数据并返回
-            timeList = timeConvert(startTime, endTime)
             result = {}
             feedbackData = []
-            # 如果没有传用户id，就获取所有的反馈信息，如果传了，就只获取属于这个用户的所有反馈信息
-            # if userId is None:
-            #     if status == "3":
-            #         data = db.session.query(Guestbook).filter(Guestbook.time.between(timeList[0], timeList[1])).all()
-            #     else:
-            #         data = db.session.query(Guestbook).filter_by(state=status).filter(
-            #             Guestbook.time.between(timeList[0], timeList[1])).all()
-            # else:
 
-            # print("user:" + str(current_user))
-            # print("user:" + str(current_user.id))
-            # print("user:" + str(current_user.is_supervisor))
+            superStatus = db.session.query(User).filter_by(id=userId).first_or_404().is_supervisor
 
-            if status == "3":
-                superStatus = db.session.query(User).filter_by(id=current_user.id).first_or_404().is_supervisor
-                if superStatus == "t":
-                    data = db.session.query(Guestbook).filter(Guestbook.time.between(timeList[0], timeList[1])).all()
-                else:
+            if superStatus:
+                if status == "3":
                     data = db.session.query(Guestbook).filter(
-                        Guestbook.time.between(timeList[0], timeList[1])).filter_by(user_id=userId).all()
+                                Guestbook.time.between(startTime, endTime)).all()
+                else:
+                    data = db.session.query(Guestbook).filter_by(state=status).filter(
+                        Guestbook.time.between(startTime, endTime)).all()
             else:
-                data = db.session.query(Guestbook).filter_by(state=status).filter(
-                    Guestbook.time.between(timeList[0], timeList[1])).filter_by(user_id=userId).all()
+                if status == "3":
+                    data = db.session.query(Guestbook).filter(
+                                Guestbook.time.between(startTime, endTime)).filter_by(user_id=userId).all()
+                else:
+                    data = db.session.query(Guestbook).filter_by(state=status).filter(
+                        Guestbook.time.between(startTime, endTime)).filter_by(user_id=userId).all()
+
             # 对数据进行处理，只保留分页需要的数据
             count = 0
             countPage = 1
@@ -175,13 +169,12 @@ class Feedback(Resource):
 
             result["feedbackData"] = feedbackData
 
-            size = int(size)
             if len(data) % size == 0:
                 result["total"] = len(data) // size
             else:
                 result["total"] = len(data) // size + 1
 
-            return ApiResponse(result, ResposeStatus.Success)
+            return ApiResponse("result", ResposeStatus.Success)
         except RuntimeError:
             return ApiResponse("Search failed! Please try again.", ResposeStatus.Fail)
 
