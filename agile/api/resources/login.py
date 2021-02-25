@@ -305,7 +305,7 @@ def splitTotal(dateType, data, tab):
             # print(str(frontTime) + " - " + str(month) + " = " + str(behindTime))
             # 对数据进行筛选
             result[monthList[i]] = data.filter(
-                tab.creat_time.between(frontTime, behindTime)).count()
+                tab.create_time.between(frontTime, behindTime)).count()
             frontTime = behindTime
     elif dateType == "1":
         # 对data数据进行筛选往前倒6周的数据，并且对每一周的数量进行记录
@@ -316,7 +316,7 @@ def splitTotal(dateType, data, tab):
             # print(str(frontTime) + " - " + str(week) + " = " + str(behindTime))
             # 对数据进行筛选
             result[weekList[i]] = data.filter(
-                tab.creat_time.between(behindTime, frontTime)).count()
+                tab.create_time.between(behindTime, frontTime)).count()
             frontTime = behindTime
 
     return result
@@ -346,7 +346,7 @@ def splitTotalCompany(dateType, data, tab):
 
             for j in data:
                 count += j.filter(
-                    tab.creat_time.between(frontTime, behindTime)).count()
+                    tab.create_time.between(frontTime, behindTime)).count()
             result[monthList[i]] = count
             count = 0
             frontTime = behindTime
@@ -360,7 +360,7 @@ def splitTotalCompany(dateType, data, tab):
             # 对数据进行筛选
             for j in data:
                 count += j.filter(
-                    tab.creat_time.between(behindTime, frontTime)).count()
+                    tab.create_time.between(behindTime, frontTime)).count()
             result[weekList[i]] = count
             count = 0
             frontTime = behindTime
