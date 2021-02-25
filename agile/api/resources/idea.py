@@ -194,18 +194,25 @@ class SearchIdea(Resource):
                 return ApiResponse(dicts, ResposeStatus.Success)
             else:
 
-                tagnum = []
-                # brandnum = []
-                # categorynum = []
+                tagnums = []
+                brandnum = []
+                categorynum = []
                 tagList = session.query(Idea_lab).filter(Idea_lab.tag_id == tag).all()
                 for val in tagList:
-                    tagnum.append(val.idea_id)
+                    tagnums.append(val.idea_id)
                 brandList = session.query(Idea_lab).filter(Idea_lab.tag_id == brand).all()
                 for val in brandList:
-                    tagnum.append(val.idea_id)
+                    brandnum.append(val.idea_id)
                 categoryList = session.query(Idea_lab).filter(Idea_lab.tag_id == category).all()
                 for val in categoryList:
-                    tagnum.append(val.idea_id)
+                    categorynum.append(val.idea_id)
+                if len(categorynum)==0:
+                    tagnum = brandnum
+                if len(brandnum)==0:
+                    tagnum = categorynum
+                if len(categorynum)!= 0 and len(brandnum)!=0:
+                    tagnum = list(set(categorynum).intersection(set(brandnum)))
+                # tagnum = list(set(categorynum).intersection(set(brandnum)))
                 dicts = {}
                 result_six = []
                 if int(sortTime) == 0:
@@ -286,7 +293,7 @@ class SearchIdea(Resource):
                 session.commit()
                 return ApiResponse(dicts, ResposeStatus.Success)
         except:
-            db.session.rollback()
+            return ApiResponse(status=ResposeStatus.ParamFail, msg="查询错误!")
 
 
 # 修改
@@ -354,6 +361,7 @@ class PraiseIdea(Resource):
                     return ApiResponse("1", ResposeStatus.Success)
         except:
             db.session.rollback()
+            return ApiResponse(status=ResposeStatus.ParamFail, msg="点赞错误!")
 
 
 class SearchIdea__(Resource):
@@ -525,7 +533,7 @@ class GetIdea(Resource):
             dict["active"] = activedict
             return ApiResponse(dict, ResposeStatus.Success)
         except:
-            db.session.rollback()
+            return ApiResponse(status=ResposeStatus.ParamFail, msg="获取详情数据错误!")
 
 def SaveActiveAndIdea(userId, activeIds, datas):
         session = db.session
