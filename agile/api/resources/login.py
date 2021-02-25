@@ -119,7 +119,9 @@ class GetSplitTotal(Resource):
                     result = splitTotalCompany(timeType, data, learnTab)
 
                 elif activityType == "idea":
-                    data = db.session.query(Idea)
+                    # 把每一个用户查询集都保存下来
+                    for user in sameCountryData:
+                        data.append(db.session.query(Idea).filter_by(user_id=user.id))
                     result = splitTotalCompany(timeType, data, ideaTab)
             elif dateType == "1":
                 if activityType == "learn":
