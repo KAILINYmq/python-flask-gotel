@@ -2,10 +2,12 @@ from flask import request, json
 from flask_restplus import Resource
 
 from agile.commons.api_response import ApiResponse, ResposeStatus
-from agile.models import Tag, Guestbook, Type_table, Details_table
+from agile.models import Tag, Guestbook, Type_table, Details_table, User
 from agile.extensions import db
 from datetime import date, datetime
+from flask_jwt_extended import current_user
 import time
+from flask_jwt_extended import jwt_required
 
 # 把type信息封装到一个dict里
 typeDict = {
@@ -99,7 +101,9 @@ class Feedback(Resource):
     page: 第几页
     size: 每页几条数据
     """
+    method_decorators = [jwt_required]
 
+    @jwt_required
     def get(self):
         try:
             # 1. 获取参数，参数init
@@ -123,6 +127,9 @@ class Feedback(Resource):
             if page is None or size is None or int(page) <= 0 or int(size) <= 0:
                 return ApiResponse("page or size parm have mistake.", ResposeStatus.Fail)
 
+            if userId is None:
+                return ApiResponse("user is not found!",ResposeStatus.Fail)
+
             size = int(size)
             page = int(page)
 
@@ -131,19 +138,28 @@ class Feedback(Resource):
             result = {}
             feedbackData = []
             # 如果没有传用户id，就获取所有的反馈信息，如果传了，就只获取属于这个用户的所有反馈信息
-            if userId is None:
-                if status == "3":
+            # if userId is None:
+            #     if status == "3":
+            #         data = db.session.query(Guestbook).filter(Guestbook.time.between(timeList[0], timeList[1])).all()
+            #     else:
+            #         data = db.session.query(Guestbook).filter_by(state=status).filter(
+            #             Guestbook.time.between(timeList[0], timeList[1])).all()
+            # else:
+
+            # print("user:" + str(current_user))
+            # print("user:" + str(current_user.id))
+            # print("user:" + str(current_user.is_supervisor))
+
+            if status == "3":
+                superStatus = db.session.query(User).filter_by(id=current_user.id).first_or_404().is_supervisor
+                if superStatus == "t":
                     data = db.session.query(Guestbook).filter(Guestbook.time.between(timeList[0], timeList[1])).all()
                 else:
-                    data = db.session.query(Guestbook).filter_by(state=status).filter(
-                        Guestbook.time.between(timeList[0], timeList[1])).all()
-            else:
-                if status == "3":
                     data = db.session.query(Guestbook).filter(
                         Guestbook.time.between(timeList[0], timeList[1])).filter_by(user_id=userId).all()
-                else:
-                    data = db.session.query(Guestbook).filter_by(state=status).filter(
-                        Guestbook.time.between(timeList[0], timeList[1])).filter_by(user_id=userId).all()
+            else:
+                data = db.session.query(Guestbook).filter_by(state=status).filter(
+                    Guestbook.time.between(timeList[0], timeList[1])).filter_by(user_id=userId).all()
             # 对数据进行处理，只保留分页需要的数据
             count = 0
             countPage = 1
