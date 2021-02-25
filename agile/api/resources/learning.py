@@ -248,7 +248,7 @@ class SearchLearning(Resource):
                 dicts = {}
                 result_six = []
                 if int(sortTime) == 0:
-                    totleCount = session.query(Learn).filter(Idea.id.in_(tagnum)).limit(size).offset((page - 1) * size)
+                    totleCount = session.query(Learn).filter(Learn.id.in_(tagnum)).limit(size).offset((page - 1) * size)
                     for ide in totleCount:
                         if str(country) == "0":
                             result_six.append(ide)

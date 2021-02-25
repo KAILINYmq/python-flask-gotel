@@ -206,7 +206,6 @@ class SearchIdea(Resource):
                 categoryList = session.query(Idea_lab).filter(Idea_lab.tag_id == category).all()
                 for val in categoryList:
                     tagnum.append(val.idea_id)
-
                 dicts = {}
                 result_six = []
                 if int(sortTime) == 0:
@@ -531,7 +530,16 @@ class GetIdea(Resource):
 def SaveActiveAndIdea(userId, activeIds, datas):
         session = db.session
         try:
-            # activityObject
+            if datas["id"] is not None and datas["id"] > 0:
+                learning = session.query(Learn).filter(Learn.active_id == datas["id"]).all()
+                for learn in learning:
+                    Learn_lab.query.filter(Learn_lab.idea_id == learn.id).delete()
+                    ideaData = Idea.query.filter(Idea.learning_id == learn.id).all()
+                    for idea in ideaData:
+                        Idea_lab.query.filter(Idea_lab.idea_id == idea.id).delete()
+                    Idea.query.filter(Idea.learning_id == learn.id).delete()
+                Learn.query.filter(Learn.active_id == datas["id"]).delete()
+                session.commit()
             if len(datas["learnings"])>0:
                 for lern in datas["learnings"]:
                     idealist = []
