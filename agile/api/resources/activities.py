@@ -1,16 +1,16 @@
 from flask import request, make_response, send_from_directory
 from flask_restplus import Resource, reqparse
 from agile.commons.api_response import ResposeStatus, ApiResponse
-from agile.models import Activities, Type_table, Details_table, Learn, Idea, Learn_lab, Idea_lab, Tag
+from agile.models import Activities, Type_table, Details_table, Learn, Idea, Learn_lab, Idea_lab, Tag, Praise
 from agile.extensions import ma, db
 from agile import PROJECT_ROOT
-from sqlalchemy import and_
+from sqlalchemy import and_, func, distinct
 import os, zipfile, re, xlsxwriter, requests
 from datetime import datetime, timedelta
 import json, shutil
 
 from .idea import SaveActiveAndIdea
-from .learning import SecetLearnInfo
+# from .learning import SecetLearnInfo
 from agile.commons import s3file
 from flask_jwt_extended import current_user, jwt_required
 
@@ -320,6 +320,138 @@ class SingleActivities(Resource):
             return ApiResponse(status=ResposeStatus.Success, msg="OK")
         return ApiResponse(status=ResposeStatus.Success, msg="OK")
 
+def fileDataFormart(i):
+    videoData = {}
+    videoData["url"] = s3file.DEFAULT_BUCKET.generate_presigned_url(obj_key=i)
+    videoData["rawUrl"] = i
+    return videoData
+
+def SecetLearnInfo(id):
+    session = db.session
+    dict = {}
+    try:
+        value = session.query(Learn).filter(Learn.id == id).first()
+        parasnum = session.query(func.count(distinct(Praise.id))).filter(Praise.work_id == value.id,
+                                                                         Praise.type == "learning",
+                                                                         Praise.is_give == 1).scalar()
+
+        dict["id"] = value.id
+        dict["name"] = value.name
+        dict["description"] = value.description
+        dict["praiseNum"] = parasnum
+        dict["time"] = value.update_time.strftime("%Y/%m/%d")
+
+        if value.image is not None and len(value.image) > 0:
+            dict["image"] = json.loads(value.image)
+        else:
+            dict["image"] = []
+        if value.video is not None and len(value.video) > 0:
+            dict["video"] = json.loads(value.video)
+        else:
+            dict["video"] = []
+        img = []
+        vio = []
+        try:
+            if dict["image"] is not None and len(dict["image"]) > 0:
+                for i in dict["image"]:
+                    img.append(fileDataFormart(i))
+            if dict["video"] is not None and len(dict["video"]) > 0:
+                for i in dict["video"]:
+                    vio.append(fileDataFormart(i))
+        except:
+            dict["image"] = []
+            dict["video"] = []
+        dict["image"] = img
+        dict["video"] = vio
+        labId = session.query(Learn_lab).filter(Learn_lab.learn_id == value.id).all()
+        tagName = []
+        brandName = []
+        categoryName = ""
+        for id in labId:
+            labIds = session.query(Tag).filter(Tag.id == id.tag_id).all()
+            for lab in labIds:
+                if lab.label_type == "Brand":
+                    brandName.append(lab.label)
+                    tagName.append(lab.label)
+                elif lab.label_type == "Category":
+                    categoryName = lab.label
+                    tagName.append(lab.label)
+                else:
+                    tagName.append(lab.label)
+        dict["tag"] = tagName
+        dict["brand"] = brandName
+        dict["category"] = categoryName
+        IdeaData = []
+        if value.idea_id is not None:
+            idealist = json.loads(value.idea_id)
+            for val in idealist:
+                ideaDict = {}
+                idea = session.query(Idea).filter(Idea.id == val).first()
+                if idea is not None:
+                    ideaDict["id"] = idea.id
+                    ideaDict["name"] = idea.name
+                    ideaDict["description"] = idea.description
+                    ideaDict["time"] = idea.update_time.strftime("%Y/%m/%d")
+
+                    labId = session.query(Idea_lab).filter(Idea_lab.idea_id == idea.id).all()
+                    tagNamed = []
+                    brandNamed = []
+                    categoryNamed = ""
+                    for id in labId:
+                        labIds = session.query(Tag).filter(Tag.id == id.tag_id).all()
+                        for lab in labIds:
+                            if lab.label_type == "Brand":
+                                brandNamed.append(lab.label)
+                                tagNamed.append(lab.label)
+                            elif lab.label_type == "Category":
+                                categoryNamed = lab.label
+                                tagNamed.append(lab.label)
+                            else:
+                                tagNamed.append(lab.label)
+                    ideaDict["brand"] = brandNamed
+                    ideaDict["category"] = categoryNamed
+                    ideaDict["tag"] = tagNamed
+
+                    if idea.image is not None and len(idea.image) > 0:
+                        ideaDict["image"] = json.loads(idea.image)
+                    else:
+                        ideaDict["image"] = []
+                    if idea.video is not None and len(idea.video) > 0:
+                        ideaDict["video"] = json.loads(idea.video)
+                    else:
+                        ideaDict["video"] = []
+                    img = []
+                    vio = []
+                    try:
+                        if ideaDict["image"] is not None and len(ideaDict["image"]) > 0:
+                            for i in ideaDict["image"]:
+                                img.append(fileDataFormart(i))
+                        if ideaDict["video"] is not None and len(ideaDict["video"]) > 0:
+                            for i in ideaDict["video"]:
+                                vio.append(fileDataFormart(i))
+                    except:
+                        ideaDict["image"] = []
+                        ideaDict["video"] = []
+                    ideaDict["image"] = img
+                    ideaDict["video"] = vio
+
+                    IdeaData.append(ideaDict)
+        dict["idea"] = IdeaData
+        activedict = {}
+        if value.active_id is not None:
+            active = session.query(Activities).filter(Activities.id == value.active_id).first()
+            activedict["name"] = active.active
+            activedict["activeType"] = active.active_type
+            activedict["activeTime"] = active.active_time
+            activedict["description"] = active.description
+            # activedict["image"] = active.image
+            # activedict["video"] = active.video
+        dict["active"] = activedict
+        session.commit()
+        return dict
+    except:
+        db.session.rollback()
+        return dict
 
 class ActivityTypes(Resource):
     def get(self):
